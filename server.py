@@ -1,5 +1,4 @@
 import os
-import threading
 import time
 import random
 import uuid
@@ -9,13 +8,29 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+HTML_CONTENT = None
+JS_CONTENT = None
+SERVICES_CONTENT = None
+
+
+def _load_static_files():
+    global HTML_CONTENT, JS_CONTENT, SERVICES_CONTENT
+    with open('index.html', 'r') as f:
+        HTML_CONTENT = f.read()
+    with open('app.js', 'r') as f:
+        JS_CONTENT = f.read()
+    with open('services.js', 'r') as f:
+        SERVICES_CONTENT = f.read()
+
+
+_load_static_files()
+
 class DataStore:
     def __init__(self):
         self.connections = {}
         self.alerts = []
         self.data_points = {}
         self._init_demo_connections()
-        self._start_simulation()
 
     def _init_demo_connections(self):
         demo_connections = [
@@ -39,45 +54,6 @@ class DataStore:
             }
             self.connections[conn["id"]] = conn
             self.data_points[conn["id"]] = []
-
-    def _start_simulation(self):
-        def simulate():
-            while True:
-                time.sleep(2)
-                for conn_id, conn in self.connections.items():
-                    conn["metrics"] = {
-                        "cpu": max(0, min(100, conn["metrics"]["cpu"] + random.randint(-10, 10))),
-                        "memory": max(0, min(100, conn["metrics"]["memory"] + random.randint(-5, 5))),
-                        "latency": max(5, conn["metrics"]["latency"] + random.randint(-20, 20)),
-                        "throughput": max(50, conn["metrics"]["throughput"] + random.randint(-100, 100))
-                    }
-                    conn["lastPing"] = time.time()
-                    
-                    if random.random() < 0.02:
-                        old_status = conn["status"]
-                        conn["status"] = random.choice(["online", "warning", "offline"])
-                        if conn["status"] != old_status:
-                            self.alerts.append({
-                                "id": str(uuid.uuid4()),
-                                "connectionId": conn_id,
-                                "connectionName": conn["name"],
-                                "type": conn["status"],
-                                "message": f"{conn['name']} is now {conn['status']}",
-                                "timestamp": time.time()
-                            })
-                            if len(self.alerts) > 50:
-                                self.alerts = self.alerts[-50:]
-                    
-                    self.data_points[conn_id].append({
-                        "timestamp": time.time(),
-                        "cpu": conn["metrics"]["cpu"],
-                        "memory": conn["metrics"]["memory"]
-                    })
-                    if len(self.data_points[conn_id]) > 60:
-                        self.data_points[conn_id] = self.data_points[conn_id][-60:]
-
-        thread = threading.Thread(target=simulate, daemon=True)
-        thread.start()
 
     def get_connections(self):
         return list(self.connections.values())
@@ -135,6 +111,11 @@ class DataStore:
 
 
 store = DataStore()
+
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "ok", "timestamp": time.time()})
 
 
 @app.route('/api/connections', methods=['GET'])
@@ -199,20 +180,17 @@ def get_connection_data(id):
 
 @app.route('/')
 def index():
-    with open('index.html', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'text/html'}
+    return HTML_CONTENT, 200, {'Content-Type': 'text/html'}
 
 
 @app.route('/app.js')
 def app_js():
-    with open('app.js', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'application/javascript'}
+    return JS_CONTENT, 200, {'Content-Type': 'application/javascript'}
 
 
 @app.route('/services.js')
 def services_js():
-    with open('services.js', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'application/javascript'}
+    return SERVICES_CONTENT, 200, {'Content-Type': 'application/javascript'}
 
 
 if __name__ == '__main__':

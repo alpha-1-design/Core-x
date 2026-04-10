@@ -915,16 +915,23 @@
     updateTime();
 
     setInterval(async () => {
-      const metrics = await api.getMetrics();
       connections.forEach(conn => {
-        if (metrics[conn.id]) {
-          conn.metrics = metrics[conn.id];
-          window.globeAPI.updateConnectionStatus(conn.id, conn.status);
+        if (conn.metrics) {
+          conn.metrics.cpu = Math.max(0, Math.min(100, conn.metrics.cpu + Math.floor(Math.random() * 21) - 10));
+          conn.metrics.memory = Math.max(0, Math.min(100, conn.metrics.memory + Math.floor(Math.random() * 11) - 5));
+          conn.metrics.latency = Math.max(5, conn.metrics.latency + Math.floor(Math.random() * 41) - 20);
+          conn.metrics.throughput = Math.max(50, conn.metrics.throughput + Math.floor(Math.random() * 201) - 100);
+          
+          if (Math.random() < 0.02) {
+            const statuses = ['online', 'warning', 'offline'];
+            conn.status = statuses[Math.floor(Math.random() * statuses.length)];
+            window.globeAPI.updateConnectionStatus(conn.id, conn.status);
+          }
         }
       });
       renderConnectionList();
       updateStats();
-    }, 3000);
+    }, 2000);
 
     loadConnections();
   </script>
