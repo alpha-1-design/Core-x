@@ -700,6 +700,7 @@
 
     function updateGlobe() {
       window.globeAPI.loadEvents(allEvents);
+      window.regions = regions;
       
       if (regions.length > 0) {
         window.globeAPI.loadHotspots(regions);

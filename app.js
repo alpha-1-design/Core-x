@@ -309,8 +309,10 @@ function setupEventListeners() {
   const container = document.getElementById('globe-container');
   
   container.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    previousMousePosition = { x: e.clientX, y: e.clientY };
+    if (e.target === renderer.domElement) {
+      isDragging = true;
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+    }
   });
   
   container.addEventListener('mousemove', (e) => {
@@ -331,16 +333,48 @@ function setupEventListeners() {
   
   container.addEventListener('wheel', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     targetZoom += e.deltaY * 0.002;
     targetZoom = Math.max(1.5, Math.min(5, targetZoom));
-  });
+  }, { passive: false });
+  
+  container.addEventListener('touchstart', (e) => {
+    if (e.target === renderer.domElement) {
+      isDragging = true;
+      previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: false });
+  
+  container.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    
+    const deltaX = e.touches[0].clientX - previousMousePosition.x;
+    const deltaY = e.touches[0].clientY - previousMousePosition.y;
+    
+    targetRotation.y += deltaX * 0.005;
+    targetRotation.x += deltaY * 0.005;
+    targetRotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, targetRotation.x));
+    
+    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: false });
+  
+  container.addEventListener('touchend', () => { isDragging = false; });
   
   container.addEventListener('click', onGlobeClick);
+  container.addEventListener('touchend', (e) => {
+    if (!isDragging && e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      onGlobeClick({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+  });
   
   window.addEventListener('resize', onWindowResize);
 }
 
 function onGlobeClick(event) {
+  if (isDragging) return;
+  
   const container = document.getElementById('globe-container');
   const rect = container.getBoundingClientRect();
   
@@ -353,24 +387,53 @@ function onGlobeClick(event) {
   raycaster.setFromCamera(mouse, camera);
   
   const allMarkers = [...Object.values(eventMarkers), ...Object.values(hotspots)];
-  if (allMarkers.length === 0) return;
   
-  const intersects = raycaster.intersectObjects(allMarkers, true);
-  
-  for (let intersect of intersects) {
-    let obj = intersect.object;
-    while (obj.parent && obj.parent !== globe) {
-      obj = obj.parent;
-    }
-    if (obj.userData.eventId) {
-      window.dispatchEvent(new CustomEvent('eventSelected', { detail: obj.userData.event }));
-      return;
-    }
-    if (obj.userData.regionCode) {
-      window.dispatchEvent(new CustomEvent('regionSelected', { detail: obj.userData.region }));
-      return;
+  if (allMarkers.length > 0) {
+    const intersects = raycaster.intersectObjects(allMarkers, true);
+    
+    for (let intersect of intersects) {
+      let obj = intersect.object;
+      while (obj.parent && obj.parent !== globe) {
+        obj = obj.parent;
+      }
+      if (obj.userData.eventId) {
+        window.dispatchEvent(new CustomEvent('eventSelected', { detail: obj.userData.event }));
+        return;
+      }
+      if (obj.userData.regionCode) {
+        window.dispatchEvent(new CustomEvent('regionSelected', { detail: obj.userData.region }));
+        return;
+      }
     }
   }
+  
+  const globeIntersect = raycaster.intersectObject(globe);
+  if (globeIntersect.length > 0) {
+    const point = globeIntersect[0].point;
+    const lat = 90 - Math.acos(point.y) * 180 / Math.PI;
+    const lng = Math.atan2(point.z, -point.x) * 180 / Math.PI - 180;
+    
+    const nearestRegion = findNearestRegion(lat, lng);
+    if (nearestRegion) {
+      window.dispatchEvent(new CustomEvent('regionSelected', { detail: nearestRegion }));
+    }
+  }
+}
+
+function findNearestRegion(lat, lng) {
+  let nearest = null;
+  let minDist = Infinity;
+  
+  const regionList = Object.values(window.regions || {});
+  for (const region of regionList) {
+    const dist = Math.sqrt((lat - region.lat) ** 2 + (lng - region.lng) ** 2);
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = region;
+    }
+  }
+  
+  return nearest;
 }
 
 function selectRegion(lat, lng) {
