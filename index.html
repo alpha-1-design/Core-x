@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Command Center 2050</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --bg-deep: #0a0a12;
+      --bg-panel: #12121f;
+      --primary: #00ff9d;
+      --secondary: #00b8ff;
+      --warning: #ffaa00;
+      --danger: #ff3366;
+      --text-primary: #e0e0e8;
+      --text-muted: #6a6a7a;
+      --grid-lines: #1a1a2e;
+      --glow: rgba(0, 255, 157, 0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .scanlines {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.1) 2px,
+        rgba(0, 0, 0, 0.1) 4px
+      );
+      z-index: 9999;
+      opacity: 0.3;
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-rows: 60px 1fr 50px;
+      grid-template-columns: 280px 1fr 320px;
+      height: 100vh;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--bg-panel);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--grid-lines);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: conic-gradient(from 0deg, var(--primary), var(--secondary), var(--primary));
+      border-radius: 50%;
+      animation: spin 8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .logo h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .left-panel {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--grid-lines);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 15px;
+      border-bottom: 1px solid var(--grid-lines);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--secondary);
+      text-transform: uppercase;
+    }
+
+    .btn-add {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 6px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+      background: var(--primary);
+      color: var(--bg-deep);
+    }
+
+    .connection-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .connection-item {
+      background: rgba(26, 26, 46, 0.5);
+      border: 1px solid var(--grid-lines);
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .connection-item:hover {
+      border-color: var(--primary);
+      background: rgba(0, 255, 157, 0.05);
+    }
+
+    .connection-item.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--glow);
+    }
+
+    .connection-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .status-dot-small {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-online { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
+    .status-warning { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+    .status-offline { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+    .connection-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .connection-type {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    .connection-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 0.7rem;
+    }
+
+    .metric {
+      text-align: center;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 0.6rem;
+    }
+
+    .metric-value {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--primary);
+    }
+
+    .main-panel {
+      position: relative;
+      background: var(--bg-deep);
+    }
+
+    #globe-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .globe-overlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      pointer-events: none;
+    }
+
+    .overlay-stats {
+      background: rgba(18, 18, 31, 0.9);
+      border: 1px solid var(--grid-lines);
+      padding: 15px;
+      min-width: 180px;
+    }
+
+    .overlay-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      color: var(--secondary);
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--primary);
+    }
+
+    .right-panel {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--grid-lines);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .detail-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--grid-lines);
+      min-height: 200px;
+    }
+
+    .detail-header {
+      padding: 15px;
+      border-bottom: 1px solid var(--grid-lines);
+    }
+
+    .detail-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--secondary);
+      text-transform: uppercase;
+    }
+
+    .detail-content {
+      padding: 15px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .detail-placeholder {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 0.85rem;
+    }
+
+    .detail-info {
+      display: none;
+    }
+
+    .detail-info.active {
+      display: block;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--grid-lines);
+      font-size: 0.8rem;
+    }
+
+    .info-label {
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--text-primary);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .metric-card {
+      background: rgba(26, 26, 46, 0.5);
+      border: 1px solid var(--grid-lines);
+      padding: 10px;
+      text-align: center;
+    }
+
+    .metric-card-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .metric-card-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .terminal-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+
+    .terminal-output {
+      flex: 1;
+      background: #0a0a0f;
+      padding: 10px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      overflow-y: auto;
+      color: var(--primary);
+      line-height: 1.6;
+    }
+
+    .terminal-input-container {
+      display: flex;
+      border-top: 1px solid var(--grid-lines);
+    }
+
+    .terminal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .terminal-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn-send {
+      background: var(--primary);
+      border: none;
+      color: var(--bg-deep);
+      padding: 0 15px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--grid-lines);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 0.75rem;
+    }
+
+    .health-bars {
+      display: flex;
+      gap: 30px;
+    }
+
+    .health-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .health-label {
+      color: var(--text-muted);
+    }
+
+    .health-bar {
+      width: 80px;
+      height: 6px;
+      background: var(--grid-lines);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .health-fill {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.3s;
+    }
+
+    .latency {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--primary);
+    }
+
+    .system-time {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--secondary);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--primary);
+      padding: 25px;
+      min-width: 400px;
+      max-width: 90%;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      color: var(--primary);
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--grid-lines);
+      color: var(--text-primary);
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      background: var(--primary);
+      border: none;
+      color: var(--bg-deep);
+      padding: 8px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+    }
+
+    .alert-item {
+      background: rgba(255, 51, 102, 0.1);
+      border: 1px solid var(--danger);
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 0.75rem;
+      animation: alertPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .alert-time {
+      color: var(--text-muted);
+      font-size: 0.65rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <div class="app-container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon"></div>
+        <h1>GLOBAL COMMAND CENTER 2050</h1>
+      </div>
+      <div class="header-status">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>SYSTEMS ONLINE</span>
+        </div>
+      </div>
+    </header>
+
+    <aside class="left-panel">
+      <div class="panel-header">
+        <span class="panel-title">Connections</span>
+        <button class="btn-add" onclick="openModal()">+ ADD</button>
+      </div>
+      <div class="connection-list" id="connectionList"></div>
+    </aside>
+
+    <main class="main-panel">
+      <div id="globe-container"></div>
+      <div class="globe-overlay">
+        <div class="overlay-stats">
+          <div class="overlay-title">GLOBAL STATUS</div>
+          <div class="stat-row">
+            <span>Active</span>
+            <span class="stat-value" id="statActive">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Warning</span>
+            <span class="stat-value" id="statWarning">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Offline</span>
+            <span class="stat-value" id="statOffline">0</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="right-panel">
+      <div class="detail-section">
+        <div class="detail-header">
+          <span class="detail-title">Detail View</span>
+        </div>
+        <div class="detail-content">
+          <div class="detail-placeholder" id="detailPlaceholder">
+            Click a connection on the globe or list to view details
+          </div>
+          <div class="detail-info" id="detailInfo"></div>
+        </div>
+      </div>
+      <div class="terminal-section">
+        <div class="detail-header">
+          <span class="detail-title">Terminal</span>
+        </div>
+        <div class="terminal-output" id="terminalOutput">
+          <div>Connected to Global Command Center 2050</div>
+          <div>Type a command and press Enter</div>
+          <div>------------------------------------------</div>
+        </div>
+        <div class="terminal-input-container">
+          <input type="text" class="terminal-input" id="terminalInput" placeholder="Enter command...">
+          <button class="btn-send" onclick="sendTerminalCommand()">→</button>
+        </div>
+      </div>
+    </aside>
+
+    <footer>
+      <div class="health-bars">
+        <div class="health-item">
+          <span class="health-label">CPU</span>
+          <div class="health-bar">
+            <div class="health-fill" id="healthCpu" style="width: 45%"></div>
+          </div>
+        </div>
+        <div class="health-item">
+          <span class="health-label">MEM</span>
+          <div class="health-bar">
+            <div class="health-fill" id="healthMem" style="width: 62%"></div>
+          </div>
+        </div>
+        <div class="health-item">
+          <span class="health-label">NET</span>
+          <div class="health-bar">
+            <div class="health-fill" id="healthNet" style="width: 78%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="latency">AVG LATENCY: <span id="avgLatency">0</span>ms</div>
+      <div class="system-time" id="systemTime">00:00:00 UTC</div>
+    </footer>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Add New Connection</span>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <form id="addConnectionForm">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" id="connName" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-input" id="connType">
+            <option value="API Server">API Server</option>
+            <option value="Data Center">Data Center</option>
+            <option value="Cloud Node">Cloud Node</option>
+            <option value="Sensor Array">Sensor Array</option>
+            <option value="Satellite Link">Satellite Link</option>
+            <option value="Maritime Sensor">Maritime Sensor</option>
+            <option value="Weather Station">Weather Station</option>
+            <option value="Research Station">Research Station</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL / Endpoint</label>
+          <input type="text" class="form-input" id="connUrl" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Latitude</label>
+            <input type="number" step="0.0001" class="form-input" id="connLat" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitude</label>
+            <input type="number" step="0.0001" class="form-input" id="connLng" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn-submit">Add Connection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="services.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let connections = [];
+    let selectedConnectionId = null;
+
+    async function loadConnections() {
+      connections = await api.getConnections();
+      window.globeAPI.loadConnections(connections);
+      renderConnectionList();
+      updateStats();
+    }
+
+    function renderConnectionList() {
+      const list = document.getElementById('connectionList');
+      list.innerHTML = connections.map(conn => `
+        <div class="connection-item ${selectedConnectionId === conn.id ? 'selected' : ''}" 
+             data-id="${conn.id}" onclick="selectConnectionById('${conn.id}')">
+          <div class="connection-header">
+            <div class="status-dot-small status-${conn.status}"></div>
+            <span class="connection-name">${conn.name}</span>
+            <span class="connection-type">${conn.type}</span>
+          </div>
+          <div class="connection-metrics">
+            <div class="metric">
+              <div class="metric-label">CPU</div>
+              <div class="metric-value">${conn.metrics?.cpu || 0}%</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">MEM</div>
+              <div class="metric-value">${conn.metrics?.memory || 0}%</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">LAT</div>
+              <div class="metric-value">${conn.metrics?.latency || 0}ms</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStats() {
+      const active = connections.filter(c => c.status === 'online').length;
+      const warning = connections.filter(c => c.status === 'warning').length;
+      const offline = connections.filter(c => c.status === 'offline').length;
+      
+      document.getElementById('statActive').textContent = active;
+      document.getElementById('statWarning').textContent = warning;
+      document.getElementById('statOffline').textContent = offline;
+
+      let totalLatency = 0, count = 0;
+      connections.forEach(c => {
+        if (c.metrics && c.metrics.latency) {
+          totalLatency += c.metrics.latency;
+          count++;
+        }
+      });
+      document.getElementById('avgLatency').textContent = count ? Math.round(totalLatency / count) : 0;
+    }
+
+    function selectConnectionById(id) {
+      selectedConnectionId = id;
+      window.globeAPI.selectConnection(id);
+      renderConnectionList();
+      showConnectionDetail(id);
+    }
+
+    function showConnectionDetail(id) {
+      const conn = connections.find(c => c.id === id);
+      if (!conn) return;
+
+      document.getElementById('detailPlaceholder').style.display = 'none';
+      const detailInfo = document.getElementById('detailInfo');
+      detailInfo.classList.add('active');
+      
+      detailInfo.innerHTML = `
+        <div class="info-row">
+          <span class="info-label">Name</span>
+          <span class="info-value">${conn.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Type</span>
+          <span class="info-value">${conn.type}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value status-${conn.status}">${conn.status.toUpperCase()}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Location</span>
+          <span class="info-value">${conn.lat.toFixed(4)}, ${conn.lng.toFixed(4)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">URL</span>
+          <span class="info-value" style="font-size: 0.7rem; word-break: break-all;">${conn.url}</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-card-label">CPU</div>
+            <div class="metric-card-value">${conn.metrics?.cpu || 0}%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">MEMORY</div>
+            <div class="metric-card-value">${conn.metrics?.memory || 0}%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">LATENCY</div>
+            <div class="metric-card-value">${conn.metrics?.latency || 0}ms</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">THROUGHPUT</div>
+            <div class="metric-card-value">${conn.metrics?.throughput || 0}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openModal() {
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    document.getElementById('addConnectionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newConn = {
+        name: document.getElementById('connName').value,
+        type: document.getElementById('connType').value,
+        url: document.getElementById('connUrl').value,
+        lat: parseFloat(document.getElementById('connLat').value),
+        lng: parseFloat(document.getElementById('connLng').value)
+      };
+      
+      const result = await api.addConnection(newConn);
+      connections.push(result);
+      window.globeAPI.loadConnections(connections);
+      renderConnectionList();
+      updateStats();
+      closeModal();
+      e.target.reset();
+    });
+
+    function sendTerminalCommand() {
+      const input = document.getElementById('terminalInput');
+      const cmd = input.value.trim();
+      if (!cmd || !selectedConnectionId) return;
+
+      const output = document.getElementById('terminalOutput');
+      output.innerHTML += `<div>> ${cmd}</div>`;
+
+      api.sendCommand(selectedConnectionId, cmd).then(result => {
+        output.innerHTML += `<div style="color: var(--text-muted);">${result.output}</div>`;
+        output.scrollTop = output.scrollHeight;
+      });
+
+      input.value = '';
+    }
+
+    document.getElementById('terminalInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendTerminalCommand();
+    });
+
+    window.addEventListener('connectionSelected', (e) => {
+      selectedConnectionId = e.detail;
+      renderConnectionList();
+      showConnectionDetail(e.detail);
+    });
+
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('systemTime').textContent = 
+        now.toISOString().slice(11, 19) + ' UTC';
+    }
+
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    setInterval(async () => {
+      const metrics = await api.getMetrics();
+      connections.forEach(conn => {
+        if (metrics[conn.id]) {
+          conn.metrics = metrics[conn.id];
+          window.globeAPI.updateConnectionStatus(conn.id, conn.status);
+        }
+      });
+      renderConnectionList();
+      updateStats();
+    }, 3000);
+
+    loadConnections();
+  </script>
+</body>
+</html>
