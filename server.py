@@ -16,7 +16,9 @@ JS_CONTENT = None
 SERVICES_CONTENT = None
 
 NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
+USE_NEWS_API = os.environ.get('USE_NEWS_API', 'false').lower() == 'true'
 USGS_API = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson'
+GDELT_API = 'https://api.gdeltproject.org/v2/docapi?output=json'
 
 COUNTRY_COORDS = {
     'US': {'lat': 37.09, 'lng': -95.71, 'name': 'United States'},
@@ -146,41 +148,193 @@ class GlobalWatchData:
             print(f"Earthquake fetch error: {e}")
 
     def _fetch_news(self):
-        if not NEWS_API_KEY:
-            self._generate_demo_news()
-            return
+        self.events = [e for e in self.events if e.get('category') in ['earthquake']]
+        
+        self._fetch_hackernews()
+        self._fetch_worldnews()
         
         try:
-            categories = ['world', 'technology', 'politics', 'business']
-            for cat in categories:
-                url = f'https://newsapi.org/v2/top-headlines?category={cat}&language=en&pageSize=10&apiKey={NEWS_API_KEY}'
-                resp = requests.get(url, timeout=10)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    for article in data.get('articles', []):
-                        if not article.get('title'):
-                            continue
-                        lat, lng = self._extract_coords(article)
-                        if lat and lng:
-                            category = self._categorize_news(article)
-                            event = {
-                                'id': f"news_{hash(article['url'])}",
-                                'category': category,
-                                'title': article['title'][:100],
-                                'description': article.get('description', '')[:200] or '',
-                                'lat': lat,
-                                'lng': lng,
-                                'source': article.get('source', {}).get('name', 'Unknown'),
-                                'url': article.get('url', ''),
-                                'image': article.get('urlToImage', ''),
-                                'time': int(time.time()) - 3600,
-                                'severity': self._assess_severity(article['title'], article.get('description', ''))
-                            }
-                            self.events.append(event)
-                            self._assign_to_region(event)
-        except Exception as e:
-            print(f"News fetch error: {e}")
+            self._fetch_gdelt()
+        except:
+            pass
+        
+        if len([e for e in self.events if e.get('category') == 'news']) < 3:
             self._generate_demo_news()
+
+    def _fetch_worldnews(self):
+        try:
+            resp = requests.get('https://www.reddit.com/r/worldnews/hot.json?limit=15', timeout=10, headers={'User-Agent': 'GlobalWatch/1.0'})
+            if resp.status_code == 200:
+                data = resp.json()
+                posts = data.get('data', {}).get('children', [])
+                for post in posts[:10]:
+                    p = post.get('data', {})
+                    if not p.get('title'):
+                        continue
+                    
+                    lat, lng = self._guess_location_from_title(p['title'])
+                    category = self._categorize_news({'title': p['title'], 'description': ''})
+                    
+                    event = {
+                        'id': f"reddit_{p['id']}",
+                        'category': category,
+                        'title': p['title'][:100],
+                        'description': f"r/worldnews • {p.get('score', 0)} upvotes",
+                        'lat': lat or 0,
+                        'lng': lng or 0,
+                        'source': 'Reddit World News',
+                        'url': f"https://reddit.com{p.get('permalink', '')}",
+                        'time': int(p.get('created_utc', time.time())),
+                        'severity': self._assess_severity(p['title'], '')
+                    }
+                    self.events.append(event)
+                    self._assign_to_region(event)
+        except Exception as e:
+            print(f"Reddit fetch error: {e}")
+
+    def _fetch_hackernews(self):
+        try:
+            top_stories = requests.get('https://hacker-news.firebaseio.com/v0/topstories.json', timeout=10).json()[:15]
+            for story_id in top_stories:
+                story = requests.get(f'https://hacker-news.firebaseio.com/v0/item/{story_id}.json', timeout=10).json()
+                if not story or not story.get('title'):
+                    continue
+                
+                lat, lng = self._extract_tech_coords(story['title'])
+                if not lat:
+                    lat, lng = self._guess_location_from_title(story['title'])
+                
+                event = {
+                    'id': f"hn_{story_id}",
+                    'category': 'tech',
+                    'title': story['title'][:100],
+                    'description': f"Hacker News • {story.get('score', 0)} points • by {story.get('by', 'anonymous')}",
+                    'lat': lat or 37.77,
+                    'lng': lng or -122.41,
+                    'source': 'Hacker News',
+                    'url': story.get('url', f'https://news.ycombinator.com/item?id={story_id}'),
+                    'time': (story.get('time', 0)) * 1000,
+                    'severity': 'low'
+                }
+                self.events.append(event)
+                self._assign_to_region(event)
+        except Exception as e:
+            print(f"HackerNews fetch error: {e}")
+
+    def _fetch_gdelt(self):
+        try:
+            url = f'{GDELT_API}&mode=artlist&format=json&maxrecords=25&gaul=US,CN,RU,IN,BR,GB,FR,DE,JP,IL,UA,IR,KP,PK,TR,SA,ZA,AU,CA,MX,EG,KR,AF,SY,IQ,LY,YE,SD,ET,NG,CO,VE,AR,ID,TH,MM,VN,PH,MY,SG,NZ,GR,IT,ES,PL,SE,NO,FI,NL,BE,CH,AT,CZ,HU,RO,BG,RS,HR,TW'
+            resp = requests.get(url, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                articles = data.get('articles', []) or data.get('channels', [])[:1]
+                if isinstance(articles, list) and len(articles) > 0:
+                    if isinstance(articles[0], dict):
+                        articles = articles[0].get('articles', []) or []
+                
+                for article in articles[:20]:
+                    if not article.get('title'):
+                        continue
+                    
+                    lat, lng = self._extract_coords_from_gdelt(article)
+                    if lat is None:
+                        lat, lng = self._guess_location_from_title(article.get('title', '') + ' ' + article.get('seglments', ''))
+                    
+                    category = self._categorize_news(article)
+                    event = {
+                        'id': f"gdelt_{hash(article.get('url', article.get('link', '')))}",
+                        'category': category,
+                        'title': article.get('title', '')[:100],
+                        'description': article.get('socialimage', '') or article.get('context', '')[:200] or '',
+                        'lat': lat or 0,
+                        'lng': lng or 0,
+                        'source': article.get('domain', 'GDELT'),
+                        'url': article.get('url', article.get('link', '')),
+                        'time': self._parse_gdelt_date(article.get('seendate', '')),
+                        'severity': self._assess_severity(article.get('title', ''), article.get('context', ''))
+                    }
+                    self.events.append(event)
+                    self._assign_to_region(event)
+        except Exception as e:
+            print(f"GDELT fetch error: {e}")
+
+    def _parse_gdelt_date(self, date_str):
+        try:
+            if date_str:
+                from datetime import datetime
+                return int(datetime.strptime(date_str[:14], '%Y%m%dT%H%M%SZ').timestamp() * 1000)
+        except:
+            pass
+        return int(time.time() * 1000)
+
+    def _extract_tech_coords(self, title):
+        title_lower = title.lower()
+        tech_locations = {
+            'san francisco': (37.77, -122.41),
+            'silicon valley': (37.39, -122.08),
+            'mountain view': (37.38, -122.08),
+            'palo alto': (37.44, -122.14),
+            'seattle': (47.60, -122.33),
+            'new york': (40.71, -74.00),
+            'london': (51.50, -0.12),
+            'berlin': (52.52, 13.40),
+            'tokyo': (35.67, 139.65),
+            'singapore': (1.35, 103.81),
+            'shenzhen': (22.54, 114.05),
+            'beijing': (39.90, 116.40),
+            'sydney': (-33.86, 151.20),
+            'toronto': (43.65, -79.38),
+            'boston': (42.36, -71.06),
+            'austin': (30.26, -97.74),
+        }
+        for loc, coords in tech_locations.items():
+            if loc in title_lower:
+                return coords
+        return None, None
+
+    def _extract_coords_from_gdelt(self, article):
+        text = f"{article.get('title', '')} {article.get('context', '')} {article.get('locations', '')}"
+        return self._guess_location_from_title(text)
+
+    def _guess_location_from_title(self, text):
+        text_lower = text.lower()
+        
+        location_map = {
+            'israel': (31.04, 34.85), 'gaza': (31.35, 34.30), 'palestine': (31.95, 35.15),
+            'ukraine': (48.37, 31.16), 'russia': (61.52, 105.31), 'moscow': (55.75, 37.61),
+            'china': (35.86, 104.19), 'beijing': (39.90, 116.40), 'shenzhen': (22.54, 114.05),
+            'iran': (32.42, 53.68), 'tehran': (35.68, 51.38),
+            'usa': (37.09, -95.71), 'united states': (37.09, -95.71), 'washington': (38.90, -77.03),
+            'uk': (55.37, -3.43), 'britain': (55.37, -3.43), 'london': (51.50, -0.12),
+            'france': (46.22, 2.21), 'paris': (48.85, 2.35),
+            'germany': (51.16, 10.45), 'berlin': (52.52, 13.40),
+            'japan': (36.20, 138.25), 'tokyo': (35.67, 139.65),
+            'india': (20.59, 78.96), 'delhi': (28.61, 77.20),
+            'brazil': (-14.23, -51.92), 'sao paulo': (-23.55, -46.63),
+            'australia': (-25.27, 133.77), 'sydney': (-33.86, 151.20),
+            'south korea': (35.90, 127.76), 'seoul': (37.56, 126.97),
+            'taiwan': (23.69, 120.96), 'taipei': (25.03, 121.56),
+            'israel': (31.04, 34.85), 'palestine': (31.95, 35.15),
+            'middle east': (29.30, 47.50),
+            'europe': (48.85, 9.18),
+            'africa': (1.28, 38.74),
+            'asia': (35.86, 104.19),
+            'san francisco': (37.77, -122.41), 'silicon valley': (37.39, -122.08),
+            'texas': (31.96, -99.90), 'austin': (30.26, -97.74),
+            'florida': (27.66, -81.51), 'miami': (25.76, -80.19),
+            'canada': (56.13, -106.34), 'toronto': (43.65, -79.38),
+            'mexico': (23.63, -102.55),
+            'egypt': (26.82, 30.80), 'cairo': (30.04, 31.23),
+            'turkey': (38.96, 35.24), 'istanbul': (41.00, 28.97),
+            'saudi': (23.88, 45.07), 'uae': (24.45, 54.37),
+            'pakistan': (30.37, 69.34), 'afghanistan': (33.93, 67.70),
+            'iraq': (33.22, 43.67), 'syria': (34.80, 38.99),
+        }
+        
+        for loc, coords in location_map.items():
+            if loc in text_lower:
+                return coords
+        return None, None
 
     def _generate_demo_news(self):
         demo_events = [
