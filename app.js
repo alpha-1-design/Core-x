@@ -1,12 +1,16 @@
-let scene, camera, renderer, globe, markers = {}, controls;
-let selectedConnection = null;
+let scene, camera, renderer, globe, markers = {};
 let animationId;
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
-let globeRotation = { x: 0.23, y: 0 };
-let targetRotation = { x: 0.23, y: 0 };
+let globeRotation = { x: 0.1, y: 0 };
+let targetRotation = { x: 0.1, y: 0 };
 let zoom = 2.5;
 let targetZoom = 2.5;
+let globeTexture;
+let hotspots = {};
+let eventMarkers = {};
+
+const EARTH_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg';
 
 function init() {
   scene = new THREE.Scene();
@@ -21,7 +25,7 @@ function init() {
   
   createStarfield();
   createGlobe();
-  createGridLines();
+  createAtmosphere();
   
   setupEventListeners();
   animate();
@@ -29,7 +33,7 @@ function init() {
 
 function createStarfield() {
   const starsGeometry = new THREE.BufferGeometry();
-  const starCount = 2000;
+  const starCount = 3000;
   const positions = new Float32Array(starCount * 3);
   
   for (let i = 0; i < starCount * 3; i += 3) {
@@ -46,9 +50,9 @@ function createStarfield() {
   
   const starsMaterial = new THREE.PointsMaterial({
     color: 0xffffff,
-    size: 0.5,
+    size: 0.3,
     transparent: true,
-    opacity: 0.8
+    opacity: 0.6
   });
   
   const stars = new THREE.Points(starsGeometry, starsMaterial);
@@ -58,56 +62,82 @@ function createStarfield() {
 function createGlobe() {
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-  
-  const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-  gradient.addColorStop(0, '#0a1628');
-  gradient.addColorStop(0.5, '#0d1f35');
-  gradient.addColorStop(1, '#081018');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 512, 256);
-  
-  drawContinents(ctx);
-  
-  const texture = new THREE.CanvasTexture(canvas);
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(
+    EARTH_TEXTURE_URL,
+    (texture) => {
+      globeTexture = texture;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      
+      const material = new THREE.MeshPhongMaterial({
+        map: texture,
+        bumpScale: 0.05,
+        specular: new THREE.Color(0x333333),
+        shininess: 5
+      });
+      
+      globe.material = material;
+    },
+    undefined,
+    (error) => {
+      console.warn('Could not load Earth texture, using fallback');
+      createFallbackGlobe();
+    }
+  );
   
   const material = new THREE.MeshPhongMaterial({
-    map: texture,
-    emissive: 0x112244,
-    emissiveIntensity: 0.3,
-    shininess: 10,
-    transparent: true,
-    opacity: 0.95
+    color: 0x1a365d,
+    specular: 0x333333,
+    shininess: 5
   });
   
   globe = new THREE.Mesh(geometry, material);
   scene.add(globe);
   
-  const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambientLight);
   
-  const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
   sunLight.position.set(5, 3, 5);
   scene.add(sunLight);
   
-  const blueLight = new THREE.DirectionalLight(0x00b8ff, 0.3);
+  const blueLight = new THREE.DirectionalLight(0x3b82f6, 0.3);
   blueLight.position.set(-5, -3, -5);
   scene.add(blueLight);
 }
 
-function drawContinents(ctx) {
-  ctx.fillStyle = '#1a3a5c';
+function createFallbackGlobe() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
   
+  const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+  gradient.addColorStop(0, '#1a365d');
+  gradient.addColorStop(0.5, '#2c5282');
+  gradient.addColorStop(1, '#1a365d');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 1024, 512);
+  
+  ctx.fillStyle = '#234e52';
+  drawFallbackContinents(ctx);
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  globe.material = new THREE.MeshPhongMaterial({
+    map: texture,
+    specular: 0x333333,
+    shininess: 5
+  });
+}
+
+function drawFallbackContinents(ctx) {
   const continents = [
-    [[150, 80], [180, 90], [200, 85], [210, 100], [190, 120], [160, 110], [140, 90]],
-    [[250, 70], [280, 60], [310, 70], [320, 90], [300, 110], [270, 100], [250, 85]],
-    [[380, 100], [420, 90], [450, 110], [440, 130], [400, 140], [370, 120]],
-    [[80, 140], [120, 130], [140, 150], [120, 170], [90, 160], [70, 150]],
-    [[200, 140], [240, 130], [260, 150], [240, 170], [210, 160]],
-    [[320, 160], [360, 150], [380, 170], [350, 180], [310, 170]]
+    [[100, 150], [180, 120], [250, 150], [280, 200], [220, 250], [120, 230], [80, 190]],
+    [[350, 130], [450, 100], [520, 140], [550, 200], [500, 280], [400, 260], [340, 200]],
+    [[500, 280], [580, 260], [620, 300], [600, 360], [540, 380], [480, 340]],
+    [[180, 300], [240, 280], [280, 320], [260, 380], [200, 370], [160, 340]],
+    [[300, 320], [360, 300], [400, 340], [380, 400], [320, 390], [280, 360]],
+    [[420, 320], [480, 300], [520, 340], [500, 400], [440, 390], [400, 360]],
   ];
   
   continents.forEach(cont => {
@@ -119,45 +149,33 @@ function drawContinents(ctx) {
   });
 }
 
-function createGridLines() {
-  const gridMaterial = new THREE.LineBasicMaterial({ 
-    color: 0x00ff9d, 
-    transparent: true, 
-    opacity: 0.15 
+function createAtmosphere() {
+  const atmosphereGeometry = new THREE.SphereGeometry(1.02, 64, 64);
+  const atmosphereMaterial = new THREE.ShaderMaterial({
+    vertexShader: `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vNormal;
+      void main() {
+        float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+      }
+    `,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,
+    transparent: true
   });
   
-  for (let i = 0; i < 18; i++) {
-    const theta = (i / 18) * Math.PI * 2;
-    const points = [];
-    for (let j = -80; j <= 80; j += 10) {
-      const lat = j * Math.PI / 180;
-      const x = Math.cos(lat) * Math.cos(theta) * 1.002;
-      const y = Math.sin(lat) * 1.002;
-      const z = Math.cos(lat) * Math.sin(theta) * 1.002;
-      points.push(new THREE.Vector3(x, y, z));
-    }
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, gridMaterial);
-    scene.add(line);
-  }
-  
-  for (let i = 0; i < 8; i++) {
-    const lat = (i - 4) * 20 * Math.PI / 180;
-    const points = [];
-    for (let j = 0; j <= 360; j += 5) {
-      const lng = j * Math.PI / 180;
-      const x = Math.cos(lat) * Math.cos(lng) * 1.002;
-      const y = Math.sin(lat) * 1.002;
-      const z = Math.cos(lat) * Math.sin(lng) * 1.002;
-      points.push(new THREE.Vector3(x, y, z));
-    }
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, gridMaterial);
-    scene.add(line);
-  }
+  const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+  scene.add(atmosphere);
 }
 
-function latLngToVector3(lat, lng) {
+function latLngToVector3(lat, lng, radius = 1.01) {
   const phi = (90 - lat) * Math.PI / 180;
   const theta = (lng + 180) * Math.PI / 180;
   
@@ -165,30 +183,42 @@ function latLngToVector3(lat, lng) {
   const z = Math.sin(phi) * Math.sin(theta);
   const y = Math.cos(phi);
   
-  return new THREE.Vector3(x, y, z);
+  return new THREE.Vector3(x * radius, y * radius, z * radius);
 }
 
-function addMarker(connection) {
-  const pos = latLngToVector3(connection.lat, connection.lng);
+function getSeverityColor(severity) {
+  switch (severity) {
+    case 'critical': return 0xef4444;
+    case 'high': return 0xf97316;
+    case 'medium': return 0xf59e0b;
+    case 'low': return 0x3b82f6;
+    default: return 0x10b981;
+  }
+}
+
+function getScoreColor(score) {
+  if (score >= 75) return 0xef4444;
+  if (score >= 50) return 0xf97316;
+  if (score >= 25) return 0xf59e0b;
+  return 0x10b981;
+}
+
+function addEventMarker(event) {
+  if (!event.lat || !event.lng) return;
   
-  let color = 0x00ff9d;
-  if (connection.status === 'warning') color = 0xffaa00;
-  if (connection.status === 'offline') color = 0xff3366;
+  const pos = latLngToVector3(event.lat, event.lng);
+  const color = getSeverityColor(event.severity);
   
   const markerGroup = new THREE.Group();
   markerGroup.position.copy(pos);
-  markerGroup.userData = { connectionId: connection.id };
+  markerGroup.userData = { eventId: event.id, event: event };
   
-  const sphereGeo = new THREE.SphereGeometry(0.03, 16, 16);
-  const sphereMat = new THREE.MeshBasicMaterial({ 
-    color: color,
-    transparent: true,
-    opacity: 0.9
-  });
-  const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-  markerGroup.add(sphere);
+  const coreGeo = new THREE.SphereGeometry(0.015, 16, 16);
+  const coreMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  markerGroup.add(core);
   
-  const glowGeo = new THREE.SphereGeometry(0.06, 16, 16);
+  const glowGeo = new THREE.SphereGeometry(0.03, 16, 16);
   const glowMat = new THREE.MeshBasicMaterial({
     color: color,
     transparent: true,
@@ -197,44 +227,82 @@ function addMarker(connection) {
   const glow = new THREE.Mesh(glowGeo, glowMat);
   markerGroup.add(glow);
   
-  const ringGeo = new THREE.RingGeometry(0.04, 0.06, 32);
+  const ringGeo = new THREE.RingGeometry(0.025, 0.04, 32);
   const ringMat = new THREE.MeshBasicMaterial({
     color: color,
     transparent: true,
-    opacity: 0.4,
+    opacity: 0.5,
     side: THREE.DoubleSide
   });
   const ring = new THREE.Mesh(ringGeo, ringMat);
   ring.lookAt(new THREE.Vector3(0, 0, 0));
   ring.userData.isRing = true;
-  ring.userData.baseOpacity = 0.4;
   markerGroup.add(ring);
   
   globe.add(markerGroup);
-  markers[connection.id] = markerGroup;
+  eventMarkers[event.id] = markerGroup;
 }
 
-function updateMarkerStatus(connectionId, status) {
-  const markerGroup = markers[connectionId];
-  if (!markerGroup) return;
+function addHotspotMarker(region) {
+  const pos = latLngToVector3(region.lat, region.lng, 1.005);
+  const color = getScoreColor(region.score);
   
-  let color = 0x00ff9d;
-  if (status === 'warning') color = 0xffaa00;
-  if (status === 'offline') color = 0xff3366;
+  const group = new THREE.Group();
+  group.position.copy(pos);
+  group.userData = { regionCode: region.code, region: region };
   
-  markerGroup.children.forEach(child => {
+  const ringGeo = new THREE.RingGeometry(0.06, 0.1, 32);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: Math.min(0.8, region.score / 100),
+    side: THREE.DoubleSide
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.lookAt(new THREE.Vector3(0, 0, 0));
+  ring.userData.isHotspotRing = true;
+  ring.userData.baseOpacity = Math.min(0.8, region.score / 100);
+  group.add(ring);
+  
+  if (region.score >= 50) {
+    const pulseGeo = new THREE.RingGeometry(0.08, 0.12, 32);
+    const pulseMat = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide
+    });
+    const pulse = new THREE.Mesh(pulseGeo, pulseMat);
+    pulse.lookAt(new THREE.Vector3(0, 0, 0));
+    pulse.userData.isPulse = true;
+    pulse.userData.baseOpacity = 0.3;
+    group.add(pulse);
+  }
+  
+  globe.add(group);
+  hotspots[region.code] = group;
+}
+
+function clearEventMarkers() {
+  Object.values(eventMarkers).forEach(marker => globe.remove(marker));
+  eventMarkers = {};
+}
+
+function clearHotspots() {
+  Object.values(hotspots).forEach(h => globe.remove(h));
+  hotspots = {};
+}
+
+function updateMarkerStatus(eventId, severity) {
+  const marker = eventMarkers[eventId];
+  if (!marker) return;
+  
+  const color = getSeverityColor(severity);
+  marker.children.forEach(child => {
     if (child.material) {
       child.material.color.setHex(color);
     }
   });
-}
-
-function removeMarker(connectionId) {
-  const markerGroup = markers[connectionId];
-  if (markerGroup) {
-    globe.remove(markerGroup);
-    delete markers[connectionId];
-  }
 }
 
 function setupEventListeners() {
@@ -253,7 +321,7 @@ function setupEventListeners() {
     
     targetRotation.y += deltaX * 0.005;
     targetRotation.x += deltaY * 0.005;
-    targetRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotation.x));
+    targetRotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, targetRotation.x));
     
     previousMousePosition = { x: e.clientX, y: e.clientY };
   });
@@ -284,45 +352,32 @@ function onGlobeClick(event) {
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(mouse, camera);
   
-  const intersects = raycaster.intersectObjects(globe.children, true);
+  const allMarkers = [...Object.values(eventMarkers), ...Object.values(hotspots)];
+  if (allMarkers.length === 0) return;
   
-  let foundConnection = null;
+  const intersects = raycaster.intersectObjects(allMarkers, true);
   
   for (let intersect of intersects) {
     let obj = intersect.object;
     while (obj.parent && obj.parent !== globe) {
       obj = obj.parent;
     }
-    if (obj.userData && obj.userData.connectionId) {
-      foundConnection = obj.userData.connectionId;
-      break;
+    if (obj.userData.eventId) {
+      window.dispatchEvent(new CustomEvent('eventSelected', { detail: obj.userData.event }));
+      return;
     }
-  }
-  
-  if (foundConnection) {
-    selectConnection(foundConnection);
+    if (obj.userData.regionCode) {
+      window.dispatchEvent(new CustomEvent('regionSelected', { detail: obj.userData.region }));
+      return;
+    }
   }
 }
 
-function selectConnection(connectionId) {
-  selectedConnection = connectionId;
-  
-  document.querySelectorAll('.connection-item').forEach(el => {
-    el.classList.remove('selected');
-    if (el.dataset.id === connectionId) {
-      el.classList.add('selected');
-    }
-  });
-  
-  const marker = markers[connectionId];
-  if (marker) {
-    const pos = marker.position.clone().normalize();
-    targetRotation.y = Math.atan2(pos.x, pos.z);
-    targetRotation.x = Math.asin(pos.y) * 0.5;
-    targetZoom = 1.8;
-  }
-  
-  window.dispatchEvent(new CustomEvent('connectionSelected', { detail: connectionId }));
+function selectRegion(lat, lng) {
+  const pos = latLngToVector3(lat, lng);
+  targetRotation.y = Math.atan2(pos.x, pos.z) + Math.PI;
+  targetRotation.x = Math.asin(pos.y) * 0.5;
+  targetZoom = 2.0;
 }
 
 function onWindowResize() {
@@ -334,21 +389,35 @@ function onWindowResize() {
 function animate() {
   animationId = requestAnimationFrame(animate);
   
-  globeRotation.x += (targetRotation.x - globeRotation.x) * 0.1;
-  globeRotation.y += (targetRotation.y - globeRotation.y) * 0.1;
+  globeRotation.x += (targetRotation.x - globeRotation.x) * 0.08;
+  globeRotation.y += (targetRotation.y - globeRotation.y) * 0.08;
   
   globe.rotation.x = globeRotation.x;
   globe.rotation.y = globeRotation.y;
   
-  zoom += (targetZoom - zoom) * 0.1;
+  zoom += (targetZoom - zoom) * 0.08;
   camera.position.z = zoom;
   
-  Object.values(markers).forEach(marker => {
+  const time = Date.now() * 0.001;
+  
+  Object.values(eventMarkers).forEach(marker => {
     marker.children.forEach(child => {
       if (child.userData.isRing) {
-        child.rotation.z += 0.01;
-        const pulse = 0.3 + Math.sin(Date.now() * 0.003) * 0.2;
-        child.material.opacity = pulse;
+        child.rotation.z += 0.02;
+        child.material.opacity = 0.3 + Math.sin(time * 2) * 0.2;
+      }
+    });
+  });
+  
+  Object.values(hotspots).forEach(hotspot => {
+    hotspot.children.forEach(child => {
+      if (child.userData.isHotspotRing) {
+        child.rotation.z += 0.005;
+      }
+      if (child.userData.isPulse) {
+        const scale = 1 + Math.sin(time * 1.5) * 0.3;
+        child.scale.set(scale, scale, scale);
+        child.material.opacity = child.userData.baseOpacity * (0.5 + Math.sin(time * 1.5) * 0.5);
       }
     });
   });
@@ -356,23 +425,25 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function loadConnections(connections) {
-  Object.values(markers).forEach(m => globe.remove(m));
-  markers = {};
-  
-  connections.forEach(conn => addMarker(conn));
+function loadEvents(events) {
+  clearEventMarkers();
+  events.forEach(event => addEventMarker(event));
 }
 
-function updateConnectionStatus(connectionId, status) {
-  if (markers[connectionId]) {
-    updateMarkerStatus(connectionId, status);
-  }
+function loadHotspots(regions) {
+  clearHotspots();
+  regions.forEach(region => {
+    if (region.score >= 10) {
+      addHotspotMarker(region);
+    }
+  });
 }
 
 window.globeAPI = {
-  loadConnections,
-  selectConnection,
-  updateConnectionStatus
+  loadEvents,
+  loadHotspots,
+  selectRegion,
+  latLngToVector3
 };
 
 if (document.readyState === 'loading') {

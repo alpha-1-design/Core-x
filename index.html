@@ -3,56 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Global Command Center 2050</title>
+  <title>Global Watch - Real-time World Monitor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     :root {
-      --bg-deep: #0a0a12;
-      --bg-panel: #12121f;
-      --primary: #00ff9d;
-      --secondary: #00b8ff;
-      --warning: #ffaa00;
-      --danger: #ff3366;
-      --text-primary: #e0e0e8;
-      --text-muted: #6a6a7a;
-      --grid-lines: #1a1a2e;
-      --glow: rgba(0, 255, 157, 0.3);
+      --bg-deep: #0a0e17;
+      --bg-panel: #111827;
+      --bg-card: #1f2937;
+      --normal: #10b981;
+      --caution: #f59e0b;
+      --critical: #ef4444;
+      --high: #f97316;
+      --info: #3b82f6;
+      --text-primary: #f1f5f9;
+      --text-muted: #64748b;
+      --border: #374151;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Inter', sans-serif;
       background: var(--bg-deep);
       color: var(--text-primary);
       overflow: hidden;
       height: 100vh;
     }
 
-    .scanlines {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.1) 2px,
-        rgba(0, 0, 0, 0.1) 4px
-      );
-      z-index: 9999;
-      opacity: 0.3;
-    }
-
     .app-container {
       display: grid;
       grid-template-rows: 60px 1fr 50px;
-      grid-template-columns: 280px 1fr 320px;
+      grid-template-columns: 300px 1fr 380px;
       height: 100vh;
+      gap: 1px;
+      background: var(--border);
     }
 
     header {
@@ -62,7 +49,6 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 20px;
-      border-bottom: 1px solid var(--grid-lines);
     }
 
     .logo {
@@ -74,30 +60,52 @@
     .logo-icon {
       width: 36px;
       height: 36px;
-      background: conic-gradient(from 0deg, var(--primary), var(--secondary), var(--primary));
-      border-radius: 50%;
-      animation: spin 8s linear infinite;
+      background: linear-gradient(135deg, var(--info), var(--normal));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .logo-icon svg { width: 20px; height: 20px; }
 
     .logo h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.4rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem;
       font-weight: 700;
-      letter-spacing: 2px;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
     }
 
-    .header-status {
+    .header-center {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-btn:hover { border-color: var(--info); color: var(--text-primary); }
+    .filter-btn.active { background: var(--info); border-color: var(--info); color: white; }
+    .filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .header-right {
       display: flex;
       align-items: center;
       gap: 20px;
     }
 
-    .status-indicator {
+    .live-indicator {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -105,138 +113,144 @@
       color: var(--text-muted);
     }
 
-    .status-dot {
+    .live-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 10px var(--primary);
-      animation: pulse 2s ease-in-out infinite;
+      background: var(--text-muted);
+    }
+
+    .live-indicator.active .live-dot {
+      background: var(--normal);
+      animation: pulse 1.5s ease-in-out infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
     }
 
     .left-panel {
       background: var(--bg-panel);
-      border-right: 1px solid var(--grid-lines);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
     .panel-header {
-      padding: 15px;
-      border-bottom: 1px solid var(--grid-lines);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
     }
 
     .panel-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem;
       letter-spacing: 2px;
-      color: var(--secondary);
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .stat-box {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      background: var(--bg-card);
+      border-radius: 8px;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
       text-transform: uppercase;
     }
 
-    .btn-add {
-      background: transparent;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 6px 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    .stat-box.critical .stat-value { color: var(--critical); }
+    .stat-box.high .stat-value { color: var(--high); }
+    .stat-box.medium .stat-value { color: var(--caution); }
 
-    .btn-add:hover {
-      background: var(--primary);
-      color: var(--bg-deep);
-    }
-
-    .connection-list {
+    .events-list {
       flex: 1;
       overflow-y: auto;
-      padding: 10px;
+      padding: 12px;
     }
 
-    .connection-item {
-      background: rgba(26, 26, 46, 0.5);
-      border: 1px solid var(--grid-lines);
+    .event-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
       padding: 12px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       cursor: pointer;
       transition: all 0.2s;
-      position: relative;
+      border-left: 3px solid var(--border);
     }
 
-    .connection-item:hover {
-      border-color: var(--primary);
-      background: rgba(0, 255, 157, 0.05);
+    .event-card:hover {
+      border-color: var(--info);
+      transform: translateX(4px);
     }
 
-    .connection-item.selected {
-      border-color: var(--primary);
-      box-shadow: 0 0 15px var(--glow);
-    }
+    .event-card.severity-critical { border-left-color: var(--critical); }
+    .event-card.severity-high { border-left-color: var(--high); }
+    .event-card.severity-medium { border-left-color: var(--caution); }
+    .event-card.severity-low { border-left-color: var(--info); }
 
-    .connection-header {
+    .event-header {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
     }
 
-    .status-dot-small {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-
-    .status-online { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
-    .status-warning { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
-    .status-offline { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-
-    .connection-name {
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .connection-type {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-left: auto;
-    }
-
-    .connection-metrics {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      font-size: 0.7rem;
-    }
-
-    .metric {
-      text-align: center;
-    }
-
-    .metric-label {
-      color: var(--text-muted);
-      font-size: 0.6rem;
-    }
-
-    .metric-value {
-      font-family: 'Share Tech Mono', monospace;
-      color: var(--primary);
-    }
-
-    .main-panel {
-      position: relative;
+    .event-category {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 10px;
       background: var(--bg-deep);
+    }
+
+    .event-category.news { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+    .event-category.tech { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .event-category.conflict { background: rgba(239, 68, 68, 0.2); color: var(--critical); }
+    .event-category.earthquake { background: rgba(249, 115, 22, 0.2); color: var(--high); }
+
+    .event-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .event-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .event-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .main-view {
+      background: var(--bg-deep);
+      position: relative;
     }
 
     #globe-container {
@@ -248,692 +262,530 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      pointer-events: none;
+      background: rgba(17, 24, 39, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
     }
 
-    .overlay-stats {
-      background: rgba(18, 18, 31, 0.9);
-      border: 1px solid var(--grid-lines);
-      padding: 15px;
-      min-width: 180px;
-    }
-
-    .overlay-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.65rem;
-      color: var(--secondary);
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
+    .globe-hint {
       font-size: 0.8rem;
-      margin-bottom: 6px;
-    }
-
-    .stat-value {
-      font-family: 'Share Tech Mono', monospace;
-      color: var(--primary);
+      color: var(--text-muted);
     }
 
     .right-panel {
       background: var(--bg-panel);
-      border-left: 1px solid var(--grid-lines);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    .detail-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      border-bottom: 1px solid var(--grid-lines);
-      min-height: 200px;
-    }
-
     .detail-header {
-      padding: 15px;
-      border-bottom: 1px solid var(--grid-lines);
-    }
-
-    .detail-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      color: var(--secondary);
-      text-transform: uppercase;
-    }
-
-    .detail-content {
-      padding: 15px;
-      flex: 1;
-      overflow-y: auto;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
     }
 
     .detail-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
       color: var(--text-muted);
       text-align: center;
-      padding: 40px 20px;
-      font-size: 0.85rem;
+      padding: 40px;
     }
 
-    .detail-info {
+    .detail-placeholder svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .detail-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
       display: none;
     }
 
-    .detail-info.active {
-      display: block;
+    .detail-content.active { display: block; }
+
+    .detail-section {
+      margin-bottom: 20px;
+    }
+
+    .detail-section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .detail-info-card {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 16px;
     }
 
     .info-row {
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
-      border-bottom: 1px solid var(--grid-lines);
-      font-size: 0.8rem;
+      border-bottom: 1px solid var(--border);
     }
 
+    .info-row:last-child { border-bottom: none; }
+
     .info-label {
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
 
     .info-value {
-      font-family: 'Share Tech Mono', monospace;
-      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
     }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-top: 15px;
+    .severity-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
     }
 
-    .metric-card {
-      background: rgba(26, 26, 46, 0.5);
-      border: 1px solid var(--grid-lines);
-      padding: 10px;
-      text-align: center;
-    }
+    .severity-badge.critical { background: rgba(239, 68, 68, 0.2); color: var(--critical); }
+    .severity-badge.high { background: rgba(249, 115, 22, 0.2); color: var(--high); }
+    .severity-badge.medium { background: rgba(245, 158, 11, 0.2); color: var(--caution); }
+    .severity-badge.low { background: rgba(59, 130, 246, 0.2); color: var(--info); }
 
-    .metric-card-label {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      margin-bottom: 5px;
-    }
-
-    .metric-card-value {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 1.1rem;
-      color: var(--primary);
-    }
-
-    .terminal-section {
-      flex: 1;
+    .region-events {
       display: flex;
       flex-direction: column;
-      min-height: 200px;
+      gap: 8px;
     }
 
-    .terminal-output {
-      flex: 1;
-      background: #0a0a0f;
+    .region-event-item {
+      background: var(--bg-card);
+      border-radius: 8px;
       padding: 10px;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.75rem;
-      overflow-y: auto;
-      color: var(--primary);
-      line-height: 1.6;
-    }
-
-    .terminal-input-container {
-      display: flex;
-      border-top: 1px solid var(--grid-lines);
-    }
-
-    .terminal-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--primary);
-      padding: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      outline: none;
-    }
-
-    .terminal-input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .btn-send {
-      background: var(--primary);
-      border: none;
-      color: var(--bg-deep);
-      padding: 0 15px;
-      font-family: 'JetBrains Mono', monospace;
       cursor: pointer;
+      transition: background 0.2s;
     }
+
+    .region-event-item:hover { background: var(--bg-deep); }
 
     footer {
       grid-column: 1 / -1;
       background: var(--bg-panel);
-      border-top: 1px solid var(--grid-lines);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 20px;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
     }
 
-    .health-bars {
-      display: flex;
-      gap: 30px;
-    }
+    .footer-left { display: flex; align-items: center; gap: 20px; }
+    .footer-right { display: flex; align-items: center; gap: 20px; }
 
-    .health-item {
+    .footer-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .health-label {
-      color: var(--text-muted);
+    .footer-item svg { width: 14px; height: 14px; }
+
+    @media (max-width: 1200px) {
+      .app-container {
+        grid-template-columns: 260px 1fr 320px;
+      }
     }
 
-    .health-bar {
-      width: 80px;
-      height: 6px;
-      background: var(--grid-lines);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .health-fill {
-      height: 100%;
-      background: var(--primary);
-      transition: width 0.3s;
-    }
-
-    .latency {
-      font-family: 'Share Tech Mono', monospace;
-      color: var(--primary);
-    }
-
-    .system-time {
-      font-family: 'Share Tech Mono', monospace;
-      color: var(--secondary);
-    }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal {
-      background: var(--bg-panel);
-      border: 1px solid var(--primary);
-      padding: 25px;
-      min-width: 400px;
-      max-width: 90%;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .modal-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1rem;
-      color: var(--primary);
-    }
-
-    .modal-close {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 5px;
-    }
-
-    .form-input {
-      width: 100%;
-      background: var(--bg-deep);
-      border: 1px solid var(--grid-lines);
-      color: var(--text-primary);
-      padding: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      outline: none;
-    }
-
-    .form-input:focus {
-      border-color: var(--primary);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .btn-cancel {
-      background: transparent;
-      border: 1px solid var(--text-muted);
-      color: var(--text-muted);
-      padding: 8px 16px;
-      font-family: 'JetBrains Mono', monospace;
-      cursor: pointer;
-    }
-
-    .btn-submit {
-      background: var(--primary);
-      border: none;
-      color: var(--bg-deep);
-      padding: 8px 20px;
-      font-family: 'JetBrains Mono', monospace;
-      cursor: pointer;
-    }
-
-    .alert-item {
-      background: rgba(255, 51, 102, 0.1);
-      border: 1px solid var(--danger);
-      padding: 10px;
-      margin-bottom: 8px;
-      font-size: 0.75rem;
-      animation: alertPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes alertPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    .alert-time {
-      color: var(--text-muted);
-      font-size: 0.65rem;
+    @media (max-width: 900px) {
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px 1fr 300px 50px;
+      }
+      .left-panel, .right-panel { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="scanlines"></div>
-
   <div class="app-container">
     <header>
       <div class="logo">
-        <div class="logo-icon"></div>
-        <h1>GLOBAL COMMAND CENTER 2050</h1>
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <h1>GLOBAL WATCH</h1>
       </div>
-      <div class="header-status">
-        <div class="status-indicator">
-          <div class="status-dot"></div>
-          <span>SYSTEMS ONLINE</span>
+      
+      <div class="header-center">
+        <button class="filter-btn active" data-filter="all">
+          All <span id="countAll">0</span>
+        </button>
+        <button class="filter-btn" data-filter="conflict">
+          <span class="dot" style="background: var(--critical)"></span> Conflict
+        </button>
+        <button class="filter-btn" data-filter="earthquake">
+          <span class="dot" style="background: var(--high)"></span> Earthquakes
+        </button>
+        <button class="filter-btn" data-filter="tech">
+          <span class="dot" style="background: #a855f7"></span> Tech
+        </button>
+        <button class="filter-btn" data-filter="news">
+          <span class="dot" style="background: var(--info)"></span> News
+        </button>
+      </div>
+      
+      <div class="header-right">
+        <div class="live-indicator" id="liveIndicator">
+          <div class="live-dot"></div>
+          <span>LIVE</span>
         </div>
       </div>
     </header>
 
-    <aside class="left-panel">
+    <div class="left-panel">
       <div class="panel-header">
-        <span class="panel-title">Connections</span>
-        <button class="btn-add" onclick="openModal()">+ ADD</button>
+        <div class="panel-title">Active Events</div>
+        <div class="stats-row">
+          <div class="stat-box critical">
+            <div class="stat-value" id="statCritical">0</div>
+            <div class="stat-label">Critical</div>
+          </div>
+          <div class="stat-box high">
+            <div class="stat-value" id="statHigh">0</div>
+            <div class="stat-label">High</div>
+          </div>
+          <div class="stat-box medium">
+            <div class="stat-value" id="statMedium">0</div>
+            <div class="stat-label">Medium</div>
+          </div>
+        </div>
       </div>
-      <div class="connection-list" id="connectionList"></div>
-    </aside>
+      <div class="events-list" id="eventsList">
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          Loading events...
+        </div>
+      </div>
+    </div>
 
-    <main class="main-panel">
+    <div class="main-view">
       <div id="globe-container"></div>
       <div class="globe-overlay">
-        <div class="overlay-stats">
-          <div class="overlay-title">GLOBAL STATUS</div>
-          <div class="stat-row">
-            <span>Active</span>
-            <span class="stat-value" id="statActive">0</span>
-          </div>
-          <div class="stat-row">
-            <span>Warning</span>
-            <span class="stat-value" id="statWarning">0</span>
-          </div>
-          <div class="stat-row">
-            <span>Offline</span>
-            <span class="stat-value" id="statOffline">0</span>
-          </div>
-        </div>
+        <div class="globe-hint">Drag to rotate • Scroll to zoom • Click markers for details</div>
       </div>
-    </main>
+    </div>
 
-    <aside class="right-panel">
-      <div class="detail-section">
-        <div class="detail-header">
-          <span class="detail-title">Detail View</span>
-        </div>
-        <div class="detail-content">
-          <div class="detail-placeholder" id="detailPlaceholder">
-            Click a connection on the globe or list to view details
+    <div class="right-panel">
+      <div class="detail-header">
+        <div class="panel-title">Details</div>
+      </div>
+      <div class="detail-placeholder" id="detailPlaceholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        <p>Select a location or event on the globe to view details</p>
+      </div>
+      <div class="detail-content" id="detailContent">
+        <div class="detail-section">
+          <div class="detail-section-title">Event Information</div>
+          <div class="detail-info-card">
+            <div class="info-row">
+              <span class="info-label">Title</span>
+              <span class="info-value" id="detailTitle">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Category</span>
+              <span class="info-value" id="detailCategory">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Severity</span>
+              <span id="detailSeverity">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Source</span>
+              <span class="info-value" id="detailSource">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Time</span>
+              <span class="info-value" id="detailTime">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Location</span>
+              <span class="info-value" id="detailLocation">-</span>
+            </div>
           </div>
-          <div class="detail-info" id="detailInfo"></div>
+        </div>
+        
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-info-card">
+            <p id="detailDescription" style="font-size: 0.9rem; line-height: 1.6;">-</p>
+          </div>
+        </div>
+        
+        <div class="detail-section" id="extraDataSection" style="display: none;">
+          <div class="detail-section-title">Additional Data</div>
+          <div class="detail-info-card" id="extraDataContent"></div>
         </div>
       </div>
-      <div class="terminal-section">
-        <div class="detail-header">
-          <span class="detail-title">Terminal</span>
-        </div>
-        <div class="terminal-output" id="terminalOutput">
-          <div>Connected to Global Command Center 2050</div>
-          <div>Type a command and press Enter</div>
-          <div>------------------------------------------</div>
-        </div>
-        <div class="terminal-input-container">
-          <input type="text" class="terminal-input" id="terminalInput" placeholder="Enter command...">
-          <button class="btn-send" onclick="sendTerminalCommand()">→</button>
-        </div>
-      </div>
-    </aside>
+    </div>
 
     <footer>
-      <div class="health-bars">
-        <div class="health-item">
-          <span class="health-label">CPU</span>
-          <div class="health-bar">
-            <div class="health-fill" id="healthCpu" style="width: 45%"></div>
-          </div>
+      <div class="footer-left">
+        <div class="footer-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>Last update: <span id="lastUpdate">-</span></span>
         </div>
-        <div class="health-item">
-          <span class="health-label">MEM</span>
-          <div class="health-bar">
-            <div class="health-fill" id="healthMem" style="width: 62%"></div>
-          </div>
-        </div>
-        <div class="health-item">
-          <span class="health-label">NET</span>
-          <div class="health-bar">
-            <div class="health-fill" id="healthNet" style="width: 78%"></div>
-          </div>
+        <div class="footer-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>Total events: <span id="totalEvents">0</span></span>
         </div>
       </div>
-      <div class="latency">AVG LATENCY: <span id="avgLatency">0</span>ms</div>
-      <div class="system-time" id="systemTime">00:00:00 UTC</div>
+      <div class="footer-right">
+        <div class="footer-item">
+          <span>Powered by USGS, NewsAPI</span>
+        </div>
+      </div>
     </footer>
-  </div>
-
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Add New Connection</span>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <form id="addConnectionForm">
-        <div class="form-group">
-          <label class="form-label">Name</label>
-          <input type="text" class="form-input" id="connName" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          <select class="form-input" id="connType">
-            <option value="API Server">API Server</option>
-            <option value="Data Center">Data Center</option>
-            <option value="Cloud Node">Cloud Node</option>
-            <option value="Sensor Array">Sensor Array</option>
-            <option value="Satellite Link">Satellite Link</option>
-            <option value="Maritime Sensor">Maritime Sensor</option>
-            <option value="Weather Station">Weather Station</option>
-            <option value="Research Station">Research Station</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">URL / Endpoint</label>
-          <input type="text" class="form-input" id="connUrl" required>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Latitude</label>
-            <input type="number" step="0.0001" class="form-input" id="connLat" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Longitude</label>
-            <input type="number" step="0.0001" class="form-input" id="connLng" required>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Add Connection</button>
-        </div>
-      </form>
-    </div>
   </div>
 
   <script src="services.js"></script>
   <script src="app.js"></script>
   <script>
-    let connections = [];
-    let selectedConnectionId = null;
+    let allEvents = [];
+    let regions = [];
+    let currentFilter = 'all';
+    let selectedEvent = null;
 
-    async function loadConnections() {
-      connections = await api.getConnections();
-      window.globeAPI.loadConnections(connections);
-      renderConnectionList();
-      updateStats();
+    async function loadData() {
+      try {
+        const [events, stats] = await Promise.all([
+          api.getEvents(),
+          api.getStats()
+        ]);
+        
+        allEvents = events;
+        updateStats(stats);
+        filterAndRenderEvents();
+        updateGlobe();
+        updateLastUpdate();
+      } catch (e) {
+        console.error('Failed to load data:', e);
+      }
     }
 
-    function renderConnectionList() {
-      const list = document.getElementById('connectionList');
-      list.innerHTML = connections.map(conn => `
-        <div class="connection-item ${selectedConnectionId === conn.id ? 'selected' : ''}" 
-             data-id="${conn.id}" onclick="selectConnectionById('${conn.id}')">
-          <div class="connection-header">
-            <div class="status-dot-small status-${conn.status}"></div>
-            <span class="connection-name">${conn.name}</span>
-            <span class="connection-type">${conn.type}</span>
+    function updateStats(stats) {
+      if (!stats) return;
+      
+      document.getElementById('statCritical').textContent = stats.by_severity?.critical || 0;
+      document.getElementById('statHigh').textContent = stats.by_severity?.high || 0;
+      document.getElementById('statMedium').textContent = stats.by_severity?.medium || 0;
+      document.getElementById('totalEvents').textContent = stats.total || 0;
+      document.getElementById('countAll').textContent = stats.total || 0;
+    }
+
+    function filterAndRenderEvents() {
+      let filtered = allEvents;
+      if (currentFilter !== 'all') {
+        filtered = allEvents.filter(e => e.category === currentFilter);
+      }
+      renderEventsList(filtered);
+    }
+
+    function renderEventsList(events) {
+      const list = document.getElementById('eventsList');
+      
+      if (events.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">No events found</div>';
+        return;
+      }
+      
+      list.innerHTML = events.map(event => `
+        <div class="event-card severity-${event.severity || 'low'}" data-id="${event.id}">
+          <div class="event-header">
+            <span class="event-category ${event.category}">${event.category}</span>
+            <span class="event-time">${formatTime(event.time)}</span>
           </div>
-          <div class="connection-metrics">
-            <div class="metric">
-              <div class="metric-label">CPU</div>
-              <div class="metric-value">${conn.metrics?.cpu || 0}%</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">MEM</div>
-              <div class="metric-value">${conn.metrics?.memory || 0}%</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">LAT</div>
-              <div class="metric-value">${conn.metrics?.latency || 0}ms</div>
-            </div>
+          <div class="event-title">${event.title}</div>
+          <div class="event-meta">
+            <span>${event.source || 'Unknown source'}</span>
+            <span>${event.lat?.toFixed(2)}, ${event.lng?.toFixed(2)}</span>
           </div>
         </div>
       `).join('');
-    }
-
-    function updateStats() {
-      const active = connections.filter(c => c.status === 'online').length;
-      const warning = connections.filter(c => c.status === 'warning').length;
-      const offline = connections.filter(c => c.status === 'offline').length;
       
-      document.getElementById('statActive').textContent = active;
-      document.getElementById('statWarning').textContent = warning;
-      document.getElementById('statOffline').textContent = offline;
-
-      let totalLatency = 0, count = 0;
-      connections.forEach(c => {
-        if (c.metrics && c.metrics.latency) {
-          totalLatency += c.metrics.latency;
-          count++;
-        }
+      list.querySelectorAll('.event-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const eventId = card.dataset.id;
+          const event = allEvents.find(e => e.id === eventId);
+          if (event) {
+            showEventDetail(event);
+            if (event.lat && event.lng) {
+              window.globeAPI.selectRegion(event.lat, event.lng);
+            }
+          }
+        });
       });
-      document.getElementById('avgLatency').textContent = count ? Math.round(totalLatency / count) : 0;
     }
 
-    function selectConnectionById(id) {
-      selectedConnectionId = id;
-      window.globeAPI.selectConnection(id);
-      renderConnectionList();
-      showConnectionDetail(id);
-    }
-
-    function showConnectionDetail(id) {
-      const conn = connections.find(c => c.id === id);
-      if (!conn) return;
-
-      document.getElementById('detailPlaceholder').style.display = 'none';
-      const detailInfo = document.getElementById('detailInfo');
-      detailInfo.classList.add('active');
+    function showEventDetail(event) {
+      selectedEvent = event;
       
-      detailInfo.innerHTML = `
-        <div class="info-row">
-          <span class="info-label">Name</span>
-          <span class="info-value">${conn.name}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Type</span>
-          <span class="info-value">${conn.type}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Status</span>
-          <span class="info-value status-${conn.status}">${conn.status.toUpperCase()}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Location</span>
-          <span class="info-value">${conn.lat.toFixed(4)}, ${conn.lng.toFixed(4)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">URL</span>
-          <span class="info-value" style="font-size: 0.7rem; word-break: break-all;">${conn.url}</span>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-card-label">CPU</div>
-            <div class="metric-card-value">${conn.metrics?.cpu || 0}%</div>
+      document.getElementById('detailPlaceholder').style.display = 'none';
+      document.getElementById('detailContent').classList.add('active');
+      
+      document.getElementById('detailTitle').textContent = event.title;
+      document.getElementById('detailCategory').textContent = event.category?.toUpperCase() || 'N/A';
+      document.getElementById('detailSource').textContent = event.source || 'Unknown';
+      document.getElementById('detailTime').textContent = formatTime(event.time);
+      document.getElementById('detailLocation').textContent = event.lat && event.lng ? 
+        `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}` : 'N/A';
+      document.getElementById('detailDescription').textContent = event.description || 'No description available.';
+      
+      const severityEl = document.getElementById('detailSeverity');
+      severityEl.innerHTML = `<span class="severity-badge ${event.severity || 'low'}">${event.severity || 'N/A'}</span>`;
+      
+      const extraSection = document.getElementById('extraDataSection');
+      const extraContent = document.getElementById('extraDataContent');
+      
+      if (event.category === 'earthquake') {
+        extraSection.style.display = 'block';
+        extraContent.innerHTML = `
+          <div class="info-row">
+            <span class="info-label">Magnitude</span>
+            <span class="info-value">${event.magnitude || 'N/A'}</span>
           </div>
-          <div class="metric-card">
-            <div class="metric-card-label">MEMORY</div>
-            <div class="metric-card-value">${conn.metrics?.memory || 0}%</div>
+          <div class="info-row">
+            <span class="info-label">Depth</span>
+            <span class="info-value">${event.depth ? event.depth.toFixed(1) + ' km' : 'N/A'}</span>
           </div>
-          <div class="metric-card">
-            <div class="metric-card-label">LATENCY</div>
-            <div class="metric-card-value">${conn.metrics?.latency || 0}ms</div>
+          <div class="info-row">
+            <span class="info-label">USGS Link</span>
+            <span class="info-value"><a href="${event.url || '#'}" target="_blank" style="color: var(--info);">View on USGS</a></span>
           </div>
-          <div class="metric-card">
-            <div class="metric-card-label">THROUGHPUT</div>
-            <div class="metric-card-value">${conn.metrics?.throughput || 0}</div>
+        `;
+      } else if (event.url) {
+        extraSection.style.display = 'block';
+        extraContent.innerHTML = `
+          <div class="info-row">
+            <span class="info-label">Article Link</span>
+            <span class="info-value"><a href="${event.url}" target="_blank" style="color: var(--info);">Read more</a></span>
           </div>
+        `;
+      } else {
+        extraSection.style.display = 'none';
+      }
+    }
+
+    function updateGlobe() {
+      window.globeAPI.loadEvents(allEvents);
+      
+      if (regions.length > 0) {
+        window.globeAPI.loadHotspots(regions);
+      }
+    }
+
+    function updateLastUpdate() {
+      const el = document.getElementById('lastUpdate');
+      el.textContent = new Date().toLocaleTimeString();
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) return 'N/A';
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = (now - date) / 1000;
+      
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return date.toLocaleDateString();
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        filterAndRenderEvents();
+      });
+    });
+
+    window.addEventListener('eventSelected', (e) => {
+      showEventDetail(e.detail);
+    });
+
+    window.addEventListener('regionSelected', (e) => {
+      const region = e.detail;
+      const regionEvents = allEvents.filter(ev => ev.region === region.code);
+      
+      document.getElementById('detailPlaceholder').style.display = 'none';
+      document.getElementById('detailContent').classList.add('active');
+      
+      document.getElementById('detailTitle').textContent = region.name;
+      document.getElementById('detailCategory').textContent = 'REGION';
+      document.getElementById('detailSeverity').innerHTML = `<span class="severity-badge ${region.score >= 50 ? 'high' : region.score >= 25 ? 'medium' : 'low'}">Risk: ${region.score}</span>`;
+      document.getElementById('detailSource').textContent = `${region.events?.length || 0} events`;
+      document.getElementById('detailTime').textContent = '-';
+      document.getElementById('detailLocation').textContent = `${region.lat?.toFixed(2)}, ${region.lng?.toFixed(2)}`;
+      document.getElementById('detailDescription').textContent = `Region activity overview. ${region.categories?.conflict || 0} conflict events, ${region.categories?.earthquake || 0} earthquakes, ${region.categories?.tech || 0} tech news items.`;
+      
+      const extraSection = document.getElementById('extraDataSection');
+      extraSection.style.display = 'block';
+      document.getElementById('extraDataContent').innerHTML = `
+        <div class="detail-section-title">Recent Events</div>
+        <div class="region-events">
+          ${regionEvents.slice(0, 5).map(ev => `
+            <div class="region-event-item">
+              <div style="font-size: 0.85rem; font-weight: 500;">${ev.title}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${ev.category} • ${formatTime(ev.time)}</div>
+            </div>
+          `).join('')}
+          ${regionEvents.length === 0 ? '<div style="color: var(--text-muted);">No recent events</div>' : ''}
         </div>
       `;
-    }
-
-    function openModal() {
-      document.getElementById('modalOverlay').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('active');
-    }
-
-    document.getElementById('addConnectionForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const newConn = {
-        name: document.getElementById('connName').value,
-        type: document.getElementById('connType').value,
-        url: document.getElementById('connUrl').value,
-        lat: parseFloat(document.getElementById('connLat').value),
-        lng: parseFloat(document.getElementById('connLng').value)
-      };
-      
-      const result = await api.addConnection(newConn);
-      connections.push(result);
-      window.globeAPI.loadConnections(connections);
-      renderConnectionList();
-      updateStats();
-      closeModal();
-      e.target.reset();
     });
 
-    function sendTerminalCommand() {
-      const input = document.getElementById('terminalInput');
-      const cmd = input.value.trim();
-      if (!cmd || !selectedConnectionId) return;
-
-      const output = document.getElementById('terminalOutput');
-      output.innerHTML += `<div>> ${cmd}</div>`;
-
-      api.sendCommand(selectedConnectionId, cmd).then(result => {
-        output.innerHTML += `<div style="color: var(--text-muted);">${result.output}</div>`;
-        output.scrollTop = output.scrollHeight;
-      });
-
-      input.value = '';
-    }
-
-    document.getElementById('terminalInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendTerminalCommand();
-    });
-
-    window.addEventListener('connectionSelected', (e) => {
-      selectedConnectionId = e.detail;
-      renderConnectionList();
-      showConnectionDetail(e.detail);
-    });
-
-    function updateTime() {
-      const now = new Date();
-      document.getElementById('systemTime').textContent = 
-        now.toISOString().slice(11, 19) + ' UTC';
-    }
-
-    setInterval(updateTime, 1000);
-    updateTime();
-
-    setInterval(async () => {
-      connections.forEach(conn => {
-        if (conn.metrics) {
-          conn.metrics.cpu = Math.max(0, Math.min(100, conn.metrics.cpu + Math.floor(Math.random() * 21) - 10));
-          conn.metrics.memory = Math.max(0, Math.min(100, conn.metrics.memory + Math.floor(Math.random() * 11) - 5));
-          conn.metrics.latency = Math.max(5, conn.metrics.latency + Math.floor(Math.random() * 41) - 20);
-          conn.metrics.throughput = Math.max(50, conn.metrics.throughput + Math.floor(Math.random() * 201) - 100);
-          
-          if (Math.random() < 0.02) {
-            const statuses = ['online', 'warning', 'offline'];
-            conn.status = statuses[Math.floor(Math.random() * statuses.length)];
-            window.globeAPI.updateConnectionStatus(conn.id, conn.status);
-          }
+    socketIO.on('update', (data) => {
+      allEvents = data.events || [];
+      regions = Object.values(data.regions || {});
+      updateStats({
+        total: allEvents.length,
+        by_severity: {
+          critical: allEvents.filter(e => e.severity === 'critical').length,
+          high: allEvents.filter(e => e.severity === 'high').length,
+          medium: allEvents.filter(e => e.severity === 'medium').length,
         }
       });
-      renderConnectionList();
-      updateStats();
-    }, 2000);
+      filterAndRenderEvents();
+      updateGlobe();
+      updateLastUpdate();
+      document.getElementById('liveIndicator').classList.add('active');
+    });
 
-    loadConnections();
+    loadData();
+    setInterval(loadData, 60000);
   </script>
 </body>
 </html>

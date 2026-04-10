@@ -1,90 +1,127 @@
 const API_BASE = '';
+let socket = null;
+let eventListeners = {};
 
 const api = {
-  async getConnections() {
+  async getEvents(params = {}) {
     try {
-      const res = await fetch(`${API_BASE}/api/connections`);
+      let url = `${API_BASE}/api/events`;
+      const queryParams = [];
+      if (params.category) queryParams.push(`category=${params.category}`);
+      if (params.lat !== undefined) queryParams.push(`lat=${params.lat}`);
+      if (params.lng !== undefined) queryParams.push(`lng=${params.lng}`);
+      if (params.radius) queryParams.push(`radius=${params.radius}`);
+      if (queryParams.length) url += '?' + queryParams.join('&');
+      
+      const res = await fetch(url);
       return await res.json();
     } catch (e) {
-      console.warn('API unavailable, using fallback data');
-      return getFallbackConnections();
-    }
-  },
-
-  async addConnection(data) {
-    const res = await fetch(`${API_BASE}/api/connections`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await res.json();
-  },
-
-  async updateConnection(id, data) {
-    const res = await fetch(`${API_BASE}/api/connections/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return await res.json();
-  },
-
-  async deleteConnection(id) {
-    const res = await fetch(`${API_BASE}/api/connections/${id}`, { method: 'DELETE' });
-    return await res.json();
-  },
-
-  async pingConnection(id) {
-    const res = await fetch(`${API_BASE}/api/connections/${id}/ping`, { method: 'POST' });
-    return await res.json();
-  },
-
-  async sendCommand(id, command) {
-    const res = await fetch(`${API_BASE}/api/connections/${id}/command`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command })
-    });
-    return await res.json();
-  },
-
-  async getMetrics() {
-    try {
-      const res = await fetch(`${API_BASE}/api/metrics`);
-      return await res.json();
-    } catch (e) {
-      return {};
-    }
-  },
-
-  async getAlerts() {
-    try {
-      const res = await fetch(`${API_BASE}/api/alerts`);
-      return await res.json();
-    } catch (e) {
+      console.error('Failed to fetch events:', e);
       return [];
     }
   },
 
-  async getConnectionData(id) {
+  async getRegions() {
     try {
-      const res = await fetch(`${API_BASE}/api/data/${id}`);
+      const res = await fetch(`${API_BASE}/api/regions`);
       return await res.json();
     } catch (e) {
+      console.error('Failed to fetch regions:', e);
       return [];
+    }
+  },
+
+  async getRegion(code) {
+    try {
+      const res = await fetch(`${API_BASE}/api/regions/${code}`);
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch region:', e);
+      return null;
+    }
+  },
+
+  async getStats() {
+    try {
+      const res = await fetch(`${API_BASE}/api/stats`);
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch stats:', e);
+      return null;
     }
   }
 };
 
-function getFallbackConnections() {
-  return [
-    { id: 'us-west', name: 'SF Gateway', type: 'API Server', lat: 37.7749, lng: -122.4194, status: 'online', metrics: { cpu: 45, memory: 62, latency: 34, throughput: 850 } },
-    { id: 'us-east', name: 'NYC Data Center', type: 'Data Center', lat: 40.7128, lng: -74.0060, status: 'online', metrics: { cpu: 78, memory: 55, latency: 28, throughput: 1200 } },
-    { id: 'eu-london', name: 'London Cloud', type: 'Cloud Node', lat: 51.5074, lng: -0.1278, status: 'warning', metrics: { cpu: 89, memory: 81, latency: 145, throughput: 420 } },
-    { id: 'eu-frankfurt', name: 'Sensor Array Alpha', type: 'Sensor Array', lat: 50.1109, lng: 8.6821, status: 'online', metrics: { cpu: 23, memory: 41, latency: 52, throughput: 180 } },
-    { id: 'asia-tokyo', name: 'Tokyo Satellite', type: 'Satellite Link', lat: 35.6762, lng: 139.6503, status: 'online', metrics: { cpu: 56, memory: 48, latency: 89, throughput: 620 } },
-    { id: 'asia-singapore', name: 'Maritime Sensor', type: 'Maritime Sensor', lat: 1.3521, lng: 103.8198, status: 'offline', metrics: { cpu: 0, memory: 0, latency: 0, throughput: 0 } },
-    { id: 'aus-sydney', name: 'Weather Station NSW', type: 'Weather Station', lat: -33.8688, lng: 151.2093, status: 'online', metrics: { cpu: 12, memory: 28, latency: 156, throughput: 95 } },
-    { id: 'africa-cape', name: 'Research Hub', type: 'Research Station', lat: -33.9249, lng: 18.4241, status: 'online', metrics: { cpu: 34, memory: 45, latency: 178, throughput: 210 } }
-  ];
+function initSocketIO() {
+  if (typeof io === 'undefined') {
+    console.warn('Socket.IO not loaded');
+    return;
+  }
+  
+  socket = io(API_BASE || window.location.origin, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionAttempts: 10
+  });
+  
+  socket.on('connect', () => {
+    console.log('WebSocket connected');
+    document.getElementById('liveIndicator')?.classList.add('active');
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('WebSocket disconnected');
+    document.getElementById('liveIndicator')?.classList.remove('active');
+  });
+  
+  socket.on('update', (data) => {
+    if (eventListeners['update']) {
+      eventListeners['update'].forEach(cb => cb(data));
+    }
+  });
+  
+  socket.on('new_event', (event) => {
+    if (eventListeners['new_event']) {
+      eventListeners['new_event'].forEach(cb => cb(event));
+    }
+  });
+}
+
+const socketIO = {
+  on(event, callback) {
+    if (!eventListeners[event]) {
+      eventListeners[event] = [];
+    }
+    eventListeners[event].push(callback);
+  },
+  
+  off(event, callback) {
+    if (eventListeners[event]) {
+      eventListeners[event] = eventListeners[event].filter(cb => cb !== callback);
+    }
+  },
+  
+  emit(event, data) {
+    if (socket) {
+      socket.emit(event, data);
+    }
+  }
+};
+
+window.api = api;
+window.socketIO = socketIO;
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+    document.head.appendChild(script);
+    script.onload = initSocketIO;
+  });
+} else {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+  document.head.appendChild(script);
+  script.onload = initSocketIO;
 }
