@@ -128,19 +128,27 @@ class GlobalWatchData:
                 for quake in data.get('features', [])[:20]:
                     props = quake['properties']
                     coords = quake['geometry']['coordinates']
+                    mag = props['mag']
+                    depth = coords[2]
+                    
+                    tsunami = 'Tsunami WATCH in effect' if props.get('tsunami', 0) == 2 else 'Tsunami WARNING' if props.get('tsunami', 0) == 1 else 'No tsunami threat'
+                    
                     event = {
                         'id': f"quake_{quake['id']}",
                         'category': 'earthquake',
-                        'title': f"M{props['mag']} - {props['place']}",
-                        'description': props.get('tsunami', 0) == 1 and 'Tsunami warning' or 'No tsunami warning',
+                        'title': f"M{mag} Earthquake - {props['place']}",
+                        'description': f"Sent at depth of {depth:.1f}km. {tsunami}. Felt reports: {props.get('felt', 0)}. Significance: {props.get('sig', 0)}.",
                         'lat': coords[1],
                         'lng': coords[0],
-                        'depth': coords[2],
-                        'magnitude': props['mag'],
-                        'source': 'USGS',
+                        'depth': depth,
+                        'magnitude': mag,
+                        'felt': props.get('felt', 0),
+                        'significance': props.get('sig', 0),
+                        'tsunami': tsunami,
+                        'source': 'USGS Earthquake Hazards Program',
                         'url': props.get('url', ''),
                         'time': props['time'],
-                        'severity': 'critical' if props['mag'] >= 6 else 'high' if props['mag'] >= 5 else 'medium'
+                        'severity': 'critical' if mag >= 6 else 'high' if mag >= 5 else 'medium'
                     }
                     self.events.append(event)
                     self._assign_to_region(event)
@@ -175,14 +183,23 @@ class GlobalWatchData:
                     lat, lng = self._guess_location_from_title(p['title'])
                     category = self._categorize_news({'title': p['title'], 'description': ''})
                     
+                    score = p.get('score', 0)
+                    num_comments = p.get('num_comments', 0)
+                    subreddit = p.get('subreddit', 'worldnews')
+                    author = p.get('author', 'anonymous')
+                    over_18 = p.get('over_18', False)
+                    
                     event = {
                         'id': f"reddit_{p['id']}",
                         'category': category,
-                        'title': p['title'][:100],
-                        'description': f"r/worldnews • {p.get('score', 0)} upvotes",
+                        'title': p['title'][:120],
+                        'description': f"Trending on r/{subreddit}. {score} upvotes • {num_comments} comments. Posted by u/{author}. {self._assess_impact(p['title'])}",
                         'lat': lat or 0,
                         'lng': lng or 0,
-                        'source': 'Reddit World News',
+                        'source': f'r/{subreddit}',
+                        'score': score,
+                        'comments': num_comments,
+                        'author': author,
                         'url': f"https://reddit.com{p.get('permalink', '')}",
                         'time': int(p.get('created_utc', time.time())),
                         'severity': self._assess_severity(p['title'], '')
@@ -204,17 +221,28 @@ class GlobalWatchData:
                 if not lat:
                     lat, lng = self._guess_location_from_title(story['title'])
                 
+                score = story.get('score', 0)
+                descendants = story.get('descendants', 0)
+                event_type = 'Discussion' if story.get('type') == 'story' and descendants > 0 else 'Article'
+                domain = ''
+                if story.get('url'):
+                    domain = story['url'].split('/')[2] if '/' in story['url'] else story['url']
+                
                 event = {
                     'id': f"hn_{story_id}",
                     'category': 'tech',
-                    'title': story['title'][:100],
-                    'description': f"Hacker News • {story.get('score', 0)} points • by {story.get('by', 'anonymous')}",
+                    'title': story['title'][:120],
+                    'description': f"{event_type} on Hacker News. {score} points • {descendants} comments. Posted by {story.get('by', 'anonymous')}. {f'Source: {domain}' if domain else ''}",
                     'lat': lat or 37.77,
                     'lng': lng or -122.41,
                     'source': 'Hacker News',
+                    'domain': domain,
+                    'points': score,
+                    'comments': descendants,
+                    'author': story.get('by', 'anonymous'),
                     'url': story.get('url', f'https://news.ycombinator.com/item?id={story_id}'),
                     'time': (story.get('time', 0)) * 1000,
-                    'severity': 'low'
+                    'severity': 'medium' if score > 100 else 'low'
                 }
                 self.events.append(event)
                 self._assign_to_region(event)
@@ -417,6 +445,17 @@ class GlobalWatchData:
         elif 'moderate' in text or 'concern' in text:
             return 'medium'
         return 'low'
+
+    def _assess_impact(self, title):
+        title_lower = title.lower()
+        high_impact_keywords = ['war', 'crisis', 'disaster', 'emergency', 'attack', 'breaking', 'deadly', 'major']
+        medium_impact_keywords = ['conflict', 'tension', 'protest', 'election', 'climate', 'economic']
+        
+        if any(k in title_lower for k in high_impact_keywords):
+            return 'This is a high-impact story with significant global implications.'
+        elif any(k in title_lower for k in medium_impact_keywords):
+            return 'This story is gaining attention for its regional or sector impact.'
+        return 'This story is trending among the community.'
 
     def _assign_to_region(self, event):
         lat, lng = event.get('lat'), event.get('lng')

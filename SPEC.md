@@ -18,6 +18,21 @@
 └─────────────────────────────────────────────────────┘
          ▲                    ▲                    ▲
 ┌────────┴────────┐  ┌───────┴───────┐  ┌────────┴────────┐
+│  News Monitor   │  │  Quake Monitor │  │  Tech Monitor  │
+│  (Reddit)       │  │  (USGS API)    │  │  (Hacker News) │
+└─────────────────┘  └───────────────┘  └─────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │  WebSocket Server │
+                    │  (real-time push) │
+                    └───────────────────┘
+```
+┌─────────────────────────────────────────────────────┐
+│                    3D GLOBE                         │
+│   Real Earth texture with hotspot overlays           │
+└─────────────────────────────────────────────────────┘
+         ▲                    ▲                    ▲
+┌────────┴────────┐  ┌───────┴───────┐  ┌────────┴────────┐
 │  News Monitor   │  │  Quake Monitor │  │  Weather/Alert │
 │  (NewsAPI)      │  │  (USGS API)    │  │  (OpenWeather) │
 └─────────────────┘  └───────────────┘  └────────────────┘
@@ -34,10 +49,13 @@
 
 | Source | API | Category | Update Frequency |
 |--------|-----|----------|------------------|
-| News | NewsAPI.org | Politics, Tech, World | 15 min |
+| News | Reddit r/worldnews | Global news | 15 min |
+| Tech | Hacker News API | Tech/startup | 15 min |
 | Earthquakes | USGS | Disasters | 5 min |
-| Weather | OpenWeatherMap | Alerts | 30 min |
-| Conflict | ACLED | Geopolitical | Daily |
+| Events | GDELT (fallback) | Global events | 30 min |
+
+> **Note:** NewsAPI was initially used but requires paid subscription for production use.
+> Hacker News and Reddit provide free, unrestricted access to trending stories.
 
 ---
 
@@ -99,10 +117,10 @@
    - Animated pulse on critical hotspots
 
 3. **Event Categories**
-   - News (geo-tagged articles)
-   - Earthquakes (magnitude + depth)
-   - Weather alerts (storms, floods)
-   - Conflict incidents
+   - News (geo-tagged articles from Reddit r/worldnews)
+   - Earthquakes (magnitude + depth + tsunami status)
+   - Tech (Hacker News stories)
+   - World events (GDELT as fallback)
 
 4. **Real-time Updates**
    - WebSocket for instant push
