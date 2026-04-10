@@ -3,6 +3,6 @@ services:
     name: gcc2050
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn server:app --workers 2 --bind 0.0.0.0:$PORT
+    startCommand: gunicorn server:app -w 2 -b :10000
     repo: https://github.com/alpha-1-design/Gracemanager-
     branch: main
