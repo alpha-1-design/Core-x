@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: gcc2050
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    repo: https://github.com/alpha-1-design/Gracemanager-
+    branch: main
