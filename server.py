@@ -84,12 +84,20 @@ COUNTRY_COORDS = {
 
 
 class GlobalWatchData:
+    MAX_EVENTS = 200
+
     def __init__(self):
         self.events = []
         self.regions = {}
         self.last_update = 0
         self.cache_ttl = 60
         self._init_regions()
+
+    def _prune_events(self):
+        if len(self.events) > self.MAX_EVENTS:
+            self.events = sorted(self.events, key=lambda x: x.get('time', 0), reverse=True)
+            self.events = self.events[:self.MAX_EVENTS]
+            logging.info(f'Pruned events, kept {len(self.events)}')
 
     def _init_regions(self):
         for code, info in COUNTRY_COORDS.items():
@@ -108,11 +116,13 @@ class GlobalWatchData:
             self._fetch_earthquakes()
             self._fetch_news()
             self._calculate_scores()
+            self._prune_events()
             self.last_update = time.time()
             socketio.emit('update', {'events': self.events, 'regions': self.regions, 'timestamp': self.last_update})
 
     def _fetch_earthquakes(self):
         try:
+            logging.info('Fetching earthquakes from USGS')
             resp = requests.get(USGS_API, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
@@ -148,6 +158,7 @@ class GlobalWatchData:
             print(f"Earthquake fetch error: {e}")
 
     def _fetch_news(self):
+        logging.info('Fetching news from external sources')
         self.events = [e for e in self.events if e.get('category') in ['earthquake']]
         
         self._fetch_hackernews()
@@ -523,17 +534,31 @@ class GlobalWatchData:
 data = GlobalWatchData()
 
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
+
 def _load_static_files():
     global HTML_CONTENT, JS_CONTENT, SERVICES_CONTENT
-    with open('index.html', 'r') as f:
-        HTML_CONTENT = f.read()
-    with open('app.js', 'r') as f:
-        JS_CONTENT = f.read()
-    with open('services.js', 'r') as f:
-        SERVICES_CONTENT = f.read()
+    try:
+        with open('index.html', 'r') as f:
+            HTML_CONTENT = f.read()
+        with open('app.js', 'r') as f:
+            JS_CONTENT = f.read()
+        with open('services.js', 'r') as f:
+            SERVICES_CONTENT = f.read()
+        logging.info('Static files loaded')
+    except FileNotFoundError as e:
+        logging.error(f'Missing static file: {e}')
+        HTML_CONTENT = '<h1>Error loading content</h1>'
+        JS_CONTENT = ''
+        SERVICES_CONTENT = ''
 
-
-_load_static_files()
+if not HTML_CONTENT:
+    _load_static_files()
 
 
 @app.route('/health')
