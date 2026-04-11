@@ -189,12 +189,12 @@
     .event-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 10px;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
       cursor: pointer;
       transition: all 0.2s;
-      border-left: 3px solid var(--border);
+      border-left: 4px solid var(--border);
     }
 
     .event-card:hover {
@@ -211,15 +211,15 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 6px;
+      margin-bottom: 10px;
     }
 
     .event-category {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 1px;
-      padding: 2px 8px;
-      border-radius: 10px;
+      padding: 4px 10px;
+      border-radius: 12px;
       background: var(--bg-deep);
     }
 
@@ -230,21 +230,28 @@
 
     .event-time {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
     }
 
     .event-title {
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-size: 1.05rem;
+      font-weight: 600;
       line-height: 1.4;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .event-description {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 8px;
     }
 
     .event-meta {
       display: flex;
       justify-content: space-between;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
 
@@ -633,6 +640,7 @@
             <span class="event-time">${formatTime(event.time)}</span>
           </div>
           <div class="event-title">${event.title}</div>
+          ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
           <div class="event-meta">
             <span>${event.source || 'Unknown source'}</span>
             <span>${event.lat?.toFixed(2)}, ${event.lng?.toFixed(2)}</span>

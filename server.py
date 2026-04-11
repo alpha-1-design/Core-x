@@ -199,21 +199,35 @@ class GlobalWatchData:
                     subreddit = p.get('subreddit', 'worldnews')
                     author = p.get('author', 'anonymous')
                     over_18 = p.get('over_18', False)
+                    selftext = p.get('selftext', '')[:200]
+                    thumbnail = p.get('thumbnail', '')
+                    url = p.get('url', '')
+                    
+                    desc_parts = []
+                    if selftext:
+                        desc_parts.append(selftext)
+                    desc_parts.append(f"{score} upvotes")
+                    desc_parts.append(f"{num_comments} comments")
+                    desc_parts.append(f"by u/{author}")
+                    
+                    description = " • ".join(desc_parts)
                     
                     event = {
                         'id': f"reddit_{p['id']}",
                         'category': category,
                         'title': p['title'][:120],
-                        'description': f"Trending on r/{subreddit}. {score} upvotes • {num_comments} comments. Posted by u/{author}. {self._assess_impact(p['title'])}",
+                        'description': description,
                         'lat': lat or 0,
                         'lng': lng or 0,
                         'source': f'r/{subreddit}',
                         'score': score,
                         'comments': num_comments,
                         'author': author,
-                        'url': f"https://reddit.com{p.get('permalink', '')}",
+                        'selftext': selftext,
+                        'thumbnail': thumbnail,
+                        'url': url or f"https://reddit.com{p.get('permalink', '')}",
                         'time': int(p.get('created_utc', time.time())) * 1000,
-                        'severity': self._assess_severity(p['title'], '')
+                        'severity': self._assess_severity(p['title'], selftext)
                     }
                     self.events.append(event)
                     self._assign_to_region(event)
@@ -234,16 +248,25 @@ class GlobalWatchData:
                 
                 score = story.get('score', 0)
                 descendants = story.get('descendants', 0)
-                event_type = 'Discussion' if story.get('type') == 'story' and descendants > 0 else 'Article'
+                event_type = 'Ask' if story.get('type') == 'poll' and 'Ask' in story.get('title', '') else 'Show' if 'Show' in story.get('title', '') else 'Discussion' if descendants > 0 else 'Article'
                 domain = ''
                 if story.get('url'):
                     domain = story['url'].split('/')[2] if '/' in story['url'] else story['url']
+                
+                text = story.get('text', '')[:200] if story.get('text') else ''
+                
+                desc_parts = [f"{event_type} on Hacker News", f"{score} points", f"{descendants} comments", f"by {story.get('by', 'anonymous')}"]
+                if domain:
+                    desc_parts.append(f"Source: {domain}")
+                description = " • ".join(desc_parts)
+                if text:
+                    description += f" • {text}"
                 
                 event = {
                     'id': f"hn_{story_id}",
                     'category': 'tech',
                     'title': story['title'][:120],
-                    'description': f"{event_type} on Hacker News. {score} points • {descendants} comments. Posted by {story.get('by', 'anonymous')}. {f'Source: {domain}' if domain else ''}",
+                    'description': description,
                     'lat': lat or 37.77,
                     'lng': lng or -122.41,
                     'source': 'Hacker News',
