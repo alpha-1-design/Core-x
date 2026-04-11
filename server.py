@@ -87,9 +87,9 @@ class GlobalWatchData:
     def __init__(self):
         self.events = []
         self.regions = {}
-        self.last_update = time.time()
+        self.last_update = 0
+        self.cache_ttl = 60
         self._init_regions()
-        self._start_fetchers()
 
     def _init_regions(self):
         for code, info in COUNTRY_COORDS.items():
@@ -103,21 +103,13 @@ class GlobalWatchData:
                 'categories': {'news': 0, 'earthquake': 0, 'conflict': 0, 'tech': 0}
             }
 
-    def _start_fetchers(self):
-        def fetch_loop():
-            while True:
-                self._fetch_earthquakes()
-                self._fetch_news()
-                self._calculate_scores()
-                self.last_update = time.time()
-                socketio.emit('update', {'events': self.events, 'regions': self.regions, 'timestamp': self.last_update})
-                time.sleep(60)
-
-        thread = threading.Thread(target=fetch_loop, daemon=True)
-        thread.start()
-        self._fetch_earthquakes()
-        self._fetch_news()
-        self._calculate_scores()
+    def ensure_fresh(self, force=False):
+        if force or not self.events or (time.time() - self.last_update) > self.cache_ttl:
+            self._fetch_earthquakes()
+            self._fetch_news()
+            self._calculate_scores()
+            self.last_update = time.time()
+            socketio.emit('update', {'events': self.events, 'regions': self.regions, 'timestamp': self.last_update})
 
     def _fetch_earthquakes(self):
         try:
@@ -159,7 +151,12 @@ class GlobalWatchData:
         self.events = [e for e in self.events if e.get('category') in ['earthquake']]
         
         self._fetch_hackernews()
-        self._fetch_worldnews()
+        
+        if not hasattr(self, '_last_reddit_fetch') or (time.time() - getattr(self, '_last_reddit_fetch', 0)) > 120:
+            self._last_reddit_fetch = time.time()
+            self._fetch_worldnews()
+        elif len([e for e in self.events if e.get('category') in ['news', 'conflict']]) == 0:
+            self._fetch_worldnews()
         
         try:
             self._fetch_gdelt()
@@ -172,6 +169,9 @@ class GlobalWatchData:
     def _fetch_worldnews(self):
         try:
             resp = requests.get('https://www.reddit.com/r/worldnews/hot.json?limit=15', timeout=10, headers={'User-Agent': 'GlobalWatch/1.0'})
+            if resp.status_code == 429:
+                print("Reddit rate limited, using cached data")
+                return
             if resp.status_code == 200:
                 data = resp.json()
                 posts = data.get('data', {}).get('children', [])
@@ -533,8 +533,15 @@ def health():
     return jsonify({"status": "ok", "timestamp": time.time()})
 
 
+@app.route('/api/refresh')
+def refresh():
+    data.ensure_fresh(force=True)
+    return jsonify({"status": "refreshed", "timestamp": data.last_update})
+
+
 @app.route('/api/events')
 def get_events():
+    data.ensure_fresh()
     category = request.args.get('category')
     lat = request.args.get('lat', type=float)
     lng = request.args.get('lng', type=float)
@@ -544,6 +551,7 @@ def get_events():
 
 @app.route('/api/regions')
 def get_regions():
+    data.ensure_fresh()
     return jsonify(data.get_regions())
 
 
@@ -557,6 +565,7 @@ def get_region(code):
 
 @app.route('/api/stats')
 def get_stats():
+    data.ensure_fresh()
     events = data.events
     return jsonify({
         'total': len(events),
@@ -593,7 +602,18 @@ def services_js():
 
 @socketio.on('connect')
 def handle_connect():
+    data.ensure_fresh()
     emit('update', {'events': data.events, 'regions': data.regions, 'timestamp': data.last_update})
+
+
+@app.route('/api/cache-status')
+def cache_status():
+    age = time.time() - data.last_update if data.last_update else 0
+    return jsonify({
+        "cached": bool(data.events),
+        "age_seconds": age,
+        "needs_refresh": age > data.cache_ttl if age else True
+    })
 
 
 if __name__ == '__main__':

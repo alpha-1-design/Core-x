@@ -578,7 +578,7 @@
     let currentFilter = 'all';
     let selectedEvent = null;
 
-    async function loadData() {
+    async function loadData(showError = true) {
       try {
         const [events, stats] = await Promise.all([
           api.getEvents(),
@@ -592,6 +592,10 @@
         updateLastUpdate();
       } catch (e) {
         console.error('Failed to load data:', e);
+        if (showError) {
+          const eventsList = document.getElementById('eventsList');
+          eventsList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--critical);">⚠ Failed to load events. Retrying...</div>';
+        }
       }
     }
 
