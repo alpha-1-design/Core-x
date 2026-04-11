@@ -201,7 +201,7 @@ class GlobalWatchData:
                         'comments': num_comments,
                         'author': author,
                         'url': f"https://reddit.com{p.get('permalink', '')}",
-                        'time': int(p.get('created_utc', time.time())),
+                        'time': int(p.get('created_utc', time.time())) * 1000,
                         'severity': self._assess_severity(p['title'], '')
                     }
                     self.events.append(event)
@@ -386,7 +386,7 @@ class GlobalWatchData:
                 'lat': ev['lat'],
                 'lng': ev['lng'],
                 'source': 'Demo Feed',
-                'time': int(time.time()) - (i * 300),
+                'time': int(time.time() * 1000) - (i * 300000),
                 'severity': ev['severity']
             }
             self.events.append(event)
