@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: core-x
+    name: gcc2050
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --worker-class eventlet -w 1 server:app -b :10000

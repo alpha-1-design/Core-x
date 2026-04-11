@@ -18,7 +18,7 @@ SERVICES_CONTENT = None
 NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
 USE_NEWS_API = os.environ.get('USE_NEWS_API', 'false').lower() == 'true'
 USGS_API = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson'
-GDELT_API = 'https://api.gdeltproject.org/v2/docapi?output=json'
+GDELT_API = 'https://api.gdeltproject.org/v2/articlepubapi?mode=artlist&format=json&sort=DateDesc'
 
 COUNTRY_COORDS = {
     'US': {'lat': 37.09, 'lng': -95.71, 'name': 'United States'},
@@ -266,7 +266,7 @@ class GlobalWatchData:
                     
                     lat, lng = self._extract_coords_from_gdelt(article)
                     if lat is None:
-                        lat, lng = self._guess_location_from_title(article.get('title', '') + ' ' + article.get('seglments', ''))
+                        lat, lng = self._guess_location_from_title(article.get('title', '') + ' ' + article.get('segments', ''))
                     
                     category = self._categorize_news(article)
                     event = {
@@ -457,6 +457,14 @@ class GlobalWatchData:
             return 'This story is gaining attention for its regional or sector impact.'
         return 'This story is trending among the community.'
 
+    def _haversine_km(self, lat1, lon1, lat2, lon2):
+        import math
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
     def _assign_to_region(self, event):
         lat, lng = event.get('lat'), event.get('lng')
         if lat is None or lng is None:
@@ -464,8 +472,8 @@ class GlobalWatchData:
         
         for code, region in self.regions.items():
             rlat, rlng = region['lat'], region['lng']
-            distance = ((lat - rlat)**2 + (lng - rlng)**2)**0.5
-            if distance < 30:
+            distance = self._haversine_km(lat, lng, rlat, rlng)
+            if distance < 500:
                 region['events'].append(event['id'])
                 region['categories'][event['category']] = region['categories'].get(event['category'], 0) + 1
                 event['region'] = code
