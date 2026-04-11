@@ -7,7 +7,7 @@ services:
     repo: https://github.com/alpha-1-design/Core-x
     branch: main
     healthCheckPath: /health
-    autoDeploy: no
+    autoDeploy: yes
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
