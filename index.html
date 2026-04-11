@@ -798,8 +798,7 @@
     function showNotification(event) {
       if (Notification.permission === 'granted' && event.severity === 'critical') {
         new Notification('Critical: ' + event.title.substring(0, 50), {
-          body: event.description || event.category,
-          icon: '/icon.svg'
+          body: event.description || event.category
         });
       }
     }

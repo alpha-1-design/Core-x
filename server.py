@@ -155,7 +155,7 @@ class GlobalWatchData:
                     self.events.append(event)
                     self._assign_to_region(event)
         except Exception as e:
-            print(f"Earthquake fetch error: {e}")
+            logging.error(f"Earthquake fetch error: {e}")
 
     def _fetch_news(self):
         logging.info('Fetching news from external sources')
@@ -181,7 +181,7 @@ class GlobalWatchData:
         try:
             resp = requests.get('https://www.reddit.com/r/worldnews/hot.json?limit=15', timeout=10, headers={'User-Agent': 'GlobalWatch/1.0'})
             if resp.status_code == 429:
-                print("Reddit rate limited, using cached data")
+                logging.warning("Reddit rate limited, using cached data")
                 return
             if resp.status_code == 200:
                 data = resp.json()
@@ -218,7 +218,7 @@ class GlobalWatchData:
                     self.events.append(event)
                     self._assign_to_region(event)
         except Exception as e:
-            print(f"Reddit fetch error: {e}")
+            logging.error(f"Reddit fetch error: {e}")
 
     def _fetch_hackernews(self):
         try:
@@ -258,7 +258,7 @@ class GlobalWatchData:
                 self.events.append(event)
                 self._assign_to_region(event)
         except Exception as e:
-            print(f"HackerNews fetch error: {e}")
+            logging.error(f"HackerNews fetch error: {e}")
 
     def _fetch_gdelt(self):
         try:
@@ -295,7 +295,7 @@ class GlobalWatchData:
                     self.events.append(event)
                     self._assign_to_region(event)
         except Exception as e:
-            print(f"GDELT fetch error: {e}")
+            logging.error(f"GDELT fetch error: {e}")
 
     def _parse_gdelt_date(self, date_str):
         try:
@@ -518,7 +518,7 @@ class GlobalWatchData:
             filtered = []
             for e in events:
                 if 'lat' in e and 'lng' in e:
-                    dist = ((e['lat'] - lat)**2 + (e['lng'] - lng)**2)**0.5
+                    dist = self._haversine_km(lat, lng, e['lat'], e['lng'])
                     if dist <= radius:
                         filtered.append(e)
             events = filtered
@@ -543,12 +543,13 @@ logging.basicConfig(
 
 def _load_static_files():
     global HTML_CONTENT, JS_CONTENT, SERVICES_CONTENT
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     try:
-        with open('index.html', 'r') as f:
+        with open(os.path.join(base_dir, 'index.html'), 'r') as f:
             HTML_CONTENT = f.read()
-        with open('app.js', 'r') as f:
+        with open(os.path.join(base_dir, 'app.js'), 'r') as f:
             JS_CONTENT = f.read()
-        with open('services.js', 'r') as f:
+        with open(os.path.join(base_dir, 'services.js'), 'r') as f:
             SERVICES_CONTENT = f.read()
         logging.info('Static files loaded')
     except FileNotFoundError as e:
