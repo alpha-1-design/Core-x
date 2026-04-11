@@ -450,6 +450,7 @@
       </div>
       
       <div class="header-right">
+        <button class="filter-btn" id="notifyBtn" onclick="enableNotifications()">Enable alerts</button>
         <div class="live-indicator" id="liveIndicator">
           <div class="live-dot"></div>
           <span>LIVE</span>
@@ -772,6 +773,38 @@
       `;
     });
 
+    loadData();
+    setInterval(loadData, 60000);
+
+    function enableNotifications() {
+      if (!('Notification' in window)) {
+        alert('Your browser does not support notifications');
+        return;
+      }
+      Notification.requestPermission().then(permission => {
+        const btn = document.getElementById('notifyBtn');
+        if (permission === 'granted') {
+          btn.textContent = 'Alerts enabled';
+          btn.style.background = 'var(--normal)';
+          btn.style.borderColor = 'var(--normal)';
+        } else {
+          btn.textContent = 'Alerts blocked';
+          btn.style.background = 'var(--critical)';
+          btn.style.borderColor = 'var(--critical)';
+        }
+      });
+    }
+
+    function showNotification(event) {
+      if (Notification.permission === 'granted' && event.severity === 'critical') {
+        new Notification('Critical: ' + event.title.substring(0, 50), {
+          body: event.description || event.category,
+          icon: '/icon.svg'
+        });
+      }
+    }
+
+    const notifiedEvents = new Set();
     socketIO.on('update', (data) => {
       allEvents = data.events || [];
       regions = Object.values(data.regions || {});
@@ -787,10 +820,14 @@
       updateGlobe();
       updateLastUpdate();
       document.getElementById('liveIndicator').classList.add('active');
+      
+      allEvents.forEach(event => {
+        if (event.severity === 'critical' && !notifiedEvents.has(event.id)) {
+          notifiedEvents.add(event.id);
+          showNotification(event);
+        }
+      });
     });
-
-    loadData();
-    setInterval(loadData, 60000);
   </script>
 </body>
 </html>
