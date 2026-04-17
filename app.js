@@ -7,10 +7,16 @@ let targetRotation = { x: 0.1, y: 0 };
 let zoom = 2.5;
 let targetZoom = 2.5;
 let globeTexture;
+let nightTexture;
+let cloudTexture;
 let hotspots = {};
 let eventMarkers = {};
+let currentMode = 'day';
+let cloudLayer = null;
 
 const EARTH_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg';
+const NIGHT_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-night.jpg';
+const CLOUD_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-clouds.png';
 
 function init() {
   scene = new THREE.Scene();
@@ -85,6 +91,11 @@ function createGlobe() {
     }
   );
   
+  textureLoader.load(NIGHT_TEXTURE_URL, (texture) => {
+    nightTexture = texture;
+    texture.colorSpace = THREE.SRGBColorSpace;
+  });
+  
   const material = new THREE.MeshPhongMaterial({
     color: 0x1a365d,
     specular: 0x333333,
@@ -93,6 +104,20 @@ function createGlobe() {
   
   globe = new THREE.Mesh(geometry, material);
   scene.add(globe);
+  
+  if (cloudTexture) {
+    createCloudLayer();
+  } else {
+    textureLoader.load(
+      CLOUD_TEXTURE_URL,
+      (texture) => {
+        cloudTexture = texture;
+        createCloudLayer();
+      },
+      undefined,
+      () => console.warn('Could not load cloud texture')
+    );
+  }
   
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambientLight);
@@ -104,6 +129,23 @@ function createGlobe() {
   const blueLight = new THREE.DirectionalLight(0x3b82f6, 0.3);
   blueLight.position.set(-5, -3, -5);
   scene.add(blueLight);
+}
+
+function createCloudLayer() {
+  if (!cloudTexture) return;
+  
+  const cloudGeometry = new THREE.SphereGeometry(1.02, 64, 64);
+  const cloudMaterial = new THREE.MeshPhongMaterial({
+    map: cloudTexture,
+    transparent: true,
+    opacity: 0.4,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  
+  cloudLayer = new THREE.Mesh(cloudGeometry, cloudMaterial);
+  cloudLayer.visible = false;
+  scene.add(cloudLayer);
 }
 
 function createFallbackGlobe() {
@@ -488,9 +530,82 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function loadEvents(events) {
-  clearEventMarkers();
-  events.forEach(event => addEventMarker(event));
+function loadEvents(events, animate = false) {
+  if (animate) {
+    const currentIds = new Set(Object.keys(eventMarkers));
+    const newIds = new Set(events.map(e => e.id));
+    
+    events.forEach(event => {
+      if (!currentIds.has(event.id)) {
+        addEventMarker(event);
+        animateMarkerIn(event.id);
+      }
+    });
+    
+    currentIds.forEach(id => {
+      if (!newIds.has(id)) {
+        const marker = eventMarkers[id];
+        if (marker) {
+          animateMarkerOut(id, () => {
+            globe.remove(eventMarkers[id]);
+            delete eventMarkers[id];
+          });
+        }
+      }
+    });
+  } else {
+    clearEventMarkers();
+    events.forEach(event => addEventMarker(event));
+  }
+}
+
+function animateMarkerIn(eventId) {
+  const marker = eventMarkers[eventId];
+  if (!marker) return;
+  
+  marker.scale.set(0, 0, 0);
+  const startTime = Date.now();
+  const duration = 500;
+  
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    
+    marker.scale.set(eased, eased, eased);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
+  animate();
+}
+
+function animateMarkerOut(eventId, callback) {
+  const marker = eventMarkers[eventId];
+  if (!marker) {
+    callback();
+    return;
+  }
+  
+  const startTime = Date.now();
+  const duration = 300;
+  const startScale = marker.scale.x;
+  
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(progress, 2);
+    
+    marker.scale.set(startScale * eased, startScale * eased, startScale * eased);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      callback();
+    }
+  }
+  animate();
 }
 
 function loadHotspots(regions) {
@@ -506,7 +621,22 @@ window.globeAPI = {
   loadEvents,
   loadHotspots,
   selectRegion,
-  latLngToVector3
+  latLngToVector3,
+  setMode(mode) {
+    currentMode = mode;
+    
+    if (mode === 'night' && nightTexture) {
+      globe.material.map = nightTexture;
+      globe.material.needsUpdate = true;
+    } else if (mode === 'day' && globeTexture) {
+      globe.material.map = globeTexture;
+      globe.material.needsUpdate = true;
+    }
+    
+    if (cloudLayer) {
+      cloudLayer.visible = mode === 'cloud';
+    }
+  }
 };
 
 if (document.readyState === 'loading') {

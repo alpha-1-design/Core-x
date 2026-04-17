@@ -130,6 +130,147 @@
       50% { opacity: 0.5; transform: scale(0.8); }
     }
 
+    .timeline-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .timeline-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .timeline-btn:hover {
+      border-color: var(--info);
+      color: var(--info);
+    }
+
+    .timeline-btn.playing {
+      background: var(--info);
+      border-color: var(--info);
+      color: white;
+    }
+
+    .timeline-range {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .range-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .range-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .range-btn.active {
+      background: var(--info);
+      color: white;
+    }
+
+    .timeline-scrubber {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+    }
+
+    .timeline-scrubber.active {
+      display: flex;
+    }
+
+    .scrubber-track {
+      width: 120px;
+      height: 4px;
+      background: var(--bg-card);
+      border-radius: 2px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .scrubber-progress {
+      height: 100%;
+      background: var(--info);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .scrubber-handle {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 12px;
+      height: 12px;
+      background: var(--info);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+    }
+
+    .scrubber-handle:active {
+      cursor: grabbing;
+    }
+
+    .scrubber-labels {
+      display: flex;
+      gap: 12px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .globe-mode-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .mode-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .mode-btn.active {
+      background: var(--info);
+      color: white;
+    }
+
     .left-panel {
       background: var(--bg-panel);
       display: flex;
@@ -388,6 +529,169 @@
 
     .region-event-item:hover { background: var(--bg-deep); }
 
+    .summarize-btn {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      color: var(--info);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .summarize-btn:hover {
+      background: var(--info);
+      color: white;
+    }
+
+    .summarize-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .sentiment-bar {
+      height: 8px;
+      background: var(--bg-deep);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    .sentiment-fill {
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, var(--critical), var(--caution), var(--normal));
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+
+    .sentiment-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .sentiment-label.positive { color: var(--normal); }
+    .sentiment-label.negative { color: var(--critical); }
+    .sentiment-label.neutral { color: var(--text-muted); }
+
+    .analytics-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .analytics-section {
+      margin-bottom: 20px;
+    }
+
+    .analytics-section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .region-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .region-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .region-bar-name {
+      font-size: 0.75rem;
+      width: 80px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .region-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-card);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .region-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .region-bar-value {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      width: 30px;
+      text-align: right;
+    }
+
+    .export-menu {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      z-index: 100;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .export-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .export-header button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .export-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .export-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .export-btn:hover {
+      border-color: var(--info);
+      background: var(--bg-deep);
+    }
+
     footer {
       grid-column: 1 / -1;
       background: var(--bg-panel);
@@ -454,9 +758,62 @@
         <button class="filter-btn" data-filter="news">
           <span class="dot" style="background: var(--info)"></span> News
         </button>
+        <button class="filter-btn" id="analyticsBtn" onclick="toggleAnalytics()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+          </svg>
+          Analytics
+        </button>
+        <button class="filter-btn" id="exportBtn" onclick="toggleExportMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+          </svg>
+          Export
+        </button>
       </div>
       
       <div class="header-right">
+        <div class="timeline-controls">
+          <button class="timeline-btn" id="timelineToggle" onclick="toggleTimeline()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+          <div class="timeline-range">
+            <button class="range-btn active" data-range="24h">24h</button>
+            <button class="range-btn" data-range="7d">7d</button>
+            <button class="range-btn" data-range="30d">30d</button>
+            <button class="range-btn" data-range="all">All</button>
+          </div>
+          <div class="timeline-scrubber" id="timelineScrubber">
+            <div class="scrubber-track">
+              <div class="scrubber-progress" id="scrubberProgress"></div>
+              <div class="scrubber-handle" id="scrubberHandle"></div>
+            </div>
+            <div class="scrubber-labels">
+              <span id="scrubberStart">-</span>
+              <span id="scrubberEnd">Now</span>
+            </div>
+          </div>
+        </div>
+        <div class="globe-mode-toggle">
+          <button class="mode-btn active" data-mode="day" onclick="setGlobeMode('day')" title="Day">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <circle cx="12" cy="12" r="5"></circle>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+            </svg>
+          </button>
+          <button class="mode-btn" data-mode="night" onclick="setGlobeMode('night')" title="Night">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <button class="mode-btn" data-mode="cloud" onclick="setGlobeMode('cloud')" title="Clouds">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+          </button>
+        </div>
         <button class="filter-btn" id="notifyBtn" onclick="enableNotifications()">Enable alerts</button>
         <div class="live-indicator" id="liveIndicator">
           <div class="live-dot"></div>
@@ -501,6 +858,22 @@
       <div class="detail-header">
         <div class="panel-title">Details</div>
       </div>
+      
+      <div class="analytics-panel" id="analyticsPanel" style="display: none;">
+        <div class="analytics-section">
+          <div class="analytics-section-title">Events by Category</div>
+          <canvas id="categoryChart" width="300" height="150"></canvas>
+        </div>
+        <div class="analytics-section">
+          <div class="analytics-section-title">Top Regions</div>
+          <div class="region-bars" id="regionBars"></div>
+        </div>
+        <div class="analytics-section">
+          <div class="analytics-section-title">Severity Distribution</div>
+          <canvas id="severityChart" width="300" height="100"></canvas>
+        </div>
+      </div>
+      
       <div class="detail-placeholder" id="detailPlaceholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -550,6 +923,24 @@
           <div class="detail-section-title">Additional Data</div>
           <div class="detail-info-card" id="extraDataContent"></div>
         </div>
+        
+        <div class="detail-section">
+          <div class="detail-section-title">AI Summary</div>
+          <div class="detail-info-card">
+            <p id="aiSummary" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-muted);">Click to generate summary</p>
+            <button class="summarize-btn" onclick="generateSummary()" id="summarizeBtn">Generate Summary</button>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <div class="detail-section-title">Sentiment</div>
+          <div class="detail-info-card">
+            <div class="sentiment-bar">
+              <div class="sentiment-fill" id="sentimentFill"></div>
+            </div>
+            <span id="sentimentLabel" class="sentiment-label">-</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -577,14 +968,49 @@
       </div>
     </footer>
   </div>
+  
+  <div class="export-menu" id="exportMenu" style="display: none;">
+    <div class="export-header">
+      <span>Export Data</span>
+      <button onclick="toggleExportMenu()">&times;</button>
+    </div>
+    <div class="export-options">
+      <button class="export-btn" onclick="exportToJSON()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        </svg>
+        Export JSON
+      </button>
+      <button class="export-btn" onclick="exportToCSV()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        </svg>
+        Export CSV
+      </button>
+      <button class="export-btn" onclick="copyShareLink()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+        </svg>
+        Copy Share Link
+      </button>
+    </div>
+  </div>
 
   <script src="services.js"></script>
   <script src="app.js"></script>
   <script>
     let allEvents = [];
+    let filteredAllEvents = [];
     let regions = [];
     let currentFilter = 'all';
     let selectedEvent = null;
+    let timelineRange = '24h';
+    let timelinePlaying = false;
+    let timelinePosition = 100;
+    let timelineStartTime = 0;
+    let timelineEndTime = 0;
+    let timelineInterval = null;
+    let timelinePlaybackSpeed = 2000;
 
     async function loadData(showError = true) {
       try {
@@ -610,17 +1036,21 @@
     function updateStats(stats) {
       if (!stats) return;
       
-      document.getElementById('statCritical').textContent = stats.by_severity?.critical || 0;
-      document.getElementById('statHigh').textContent = stats.by_severity?.high || 0;
-      document.getElementById('statMedium').textContent = stats.by_severity?.medium || 0;
-      document.getElementById('totalEvents').textContent = stats.total || 0;
-      document.getElementById('countAll').textContent = stats.total || 0;
+      const criticalCount = filteredAllEvents.filter(e => e.severity === 'critical').length;
+      const highCount = filteredAllEvents.filter(e => e.severity === 'high').length;
+      const mediumCount = filteredAllEvents.filter(e => e.severity === 'medium').length;
+      
+      document.getElementById('statCritical').textContent = criticalCount;
+      document.getElementById('statHigh').textContent = highCount;
+      document.getElementById('statMedium').textContent = mediumCount;
+      document.getElementById('totalEvents').textContent = filteredAllEvents.length;
+      document.getElementById('countAll').textContent = filteredAllEvents.length;
     }
 
     function filterAndRenderEvents() {
-      let filtered = allEvents;
+      let filtered = filteredAllEvents;
       if (currentFilter !== 'all') {
-        filtered = allEvents.filter(e => e.category === currentFilter);
+        filtered = filteredAllEvents.filter(e => e.category === currentFilter);
       }
       renderEventsList(filtered);
     }
@@ -709,10 +1139,79 @@
       } else {
         extraSection.style.display = 'none';
       }
+      
+      generateSummary(event);
+      analyzeSentiment(event);
+    }
+    
+    async function generateSummary(event) {
+      const summaryEl = document.getElementById('aiSummary');
+      const btn = document.getElementById('summarizeBtn');
+      
+      if (!event) {
+        summaryEl.textContent = 'Select an event to generate summary';
+        btn.style.display = 'none';
+        return;
+      }
+      
+      btn.style.display = 'inline-block';
+      summaryEl.textContent = 'Click button to generate summary';
+      
+      btn.onclick = async () => {
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+        
+        try {
+          const res = await fetch('/api/summarize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_id: event.id })
+          });
+          const data = await res.json();
+          
+          summaryEl.textContent = data.summary || 'Could not generate summary';
+          btn.textContent = 'Regenerate';
+        } catch (e) {
+          summaryEl.textContent = 'Error generating summary';
+          btn.textContent = 'Retry';
+        }
+        
+        btn.disabled = false;
+      };
+    }
+    
+    async function analyzeSentiment(event) {
+      const fill = document.getElementById('sentimentFill');
+      const label = document.getElementById('sentimentLabel');
+      
+      if (!event) {
+        fill.style.width = '50%';
+        label.textContent = '-';
+        label.className = 'sentiment-label';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/sentiment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: event.id })
+        });
+        const data = await res.json();
+        
+        const percent = 50 + (data.score * 40);
+        fill.style.width = percent + '%';
+        label.textContent = data.sentiment || 'Neutral';
+        label.className = 'sentiment-label ' + (data.sentiment || 'neutral');
+      } catch (e) {
+        fill.style.width = '50%';
+        label.textContent = 'Unknown';
+        label.className = 'sentiment-label';
+      }
     }
 
-    function updateGlobe() {
-      window.globeAPI.loadEvents(allEvents);
+    function updateGlobe(animate = false) {
+      window.globeAPI.loadEvents(filteredAllEvents, animate);
       window.regions = regions;
       
       if (regions.length > 0) {
@@ -782,6 +1281,7 @@
     });
 
     loadData();
+    initTimeline();
     setInterval(loadData, 60000);
 
     function enableNotifications() {
@@ -813,19 +1313,17 @@
 
     const notifiedEvents = new Set();
     socketIO.on('update', (data) => {
+      const wasPlaying = timelinePlaying;
       allEvents = data.events || [];
+      filteredAllEvents = [...allEvents];
       regions = Object.values(data.regions || {});
-      updateStats({
-        total: allEvents.length,
-        by_severity: {
-          critical: allEvents.filter(e => e.severity === 'critical').length,
-          high: allEvents.filter(e => e.severity === 'high').length,
-          medium: allEvents.filter(e => e.severity === 'medium').length,
-        }
-      });
+      updateStats(null);
       filterAndRenderEvents();
-      updateGlobe();
+      updateGlobe(wasPlaying);
       updateLastUpdate();
+      if (timelinePlaying) {
+        updateScrubberLabels();
+      }
       document.getElementById('liveIndicator').classList.add('active');
       
       allEvents.forEach(event => {
@@ -835,6 +1333,352 @@
         }
       });
     });
+
+    function initTimeline() {
+      timelineStartTime = Date.now() - getRangeMs(timelineRange);
+      timelineEndTime = Date.now();
+      updateScrubberLabels();
+      
+      document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          timelineRange = btn.dataset.range;
+          timelinePosition = 100;
+          timelineStartTime = Date.now() - getRangeMs(timelineRange);
+          timelineEndTime = Date.now();
+          updateScrubberLabels();
+          applyTimelineFilter();
+        });
+      });
+      
+      const scrubberTrack = document.querySelector('.scrubber-track');
+      if (scrubberTrack) {
+        scrubberTrack.addEventListener('click', (e) => {
+          const rect = scrubberTrack.getBoundingClientRect();
+          const pos = (e.clientX - rect.left) / rect.width;
+          timelinePosition = pos * 100;
+          updateTimelinePosition();
+        });
+      }
+      
+      const handle = document.getElementById('scrubberHandle');
+      if (handle) {
+        let isDragging = false;
+        handle.addEventListener('mousedown', () => isDragging = true);
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          const track = document.querySelector('.scrubber-track');
+          const rect = track.getBoundingClientRect();
+          const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          timelinePosition = pos * 100;
+          updateTimelinePosition();
+        });
+      }
+    }
+    
+    function getRangeMs(range) {
+      switch(range) {
+        case '24h': return 24 * 60 * 60 * 1000;
+        case '7d': return 7 * 24 * 60 * 60 * 1000;
+        case '30d': return 30 * 24 * 60 * 60 * 1000;
+        case 'all': return 365 * 24 * 60 * 60 * 1000;
+        default: return 24 * 60 * 60 * 1000;
+      }
+    }
+    
+    function updateScrubberLabels() {
+      const startDate = new Date(timelineStartTime);
+      const endDate = new Date(timelineEndTime);
+      document.getElementById('scrubberStart').textContent = formatTimelineDate(startDate);
+      document.getElementById('scrubberEnd').textContent = timelineRange === 'all' ? formatTimelineDate(endDate) : 'Now';
+    }
+    
+    function formatTimelineDate(date) {
+      const now = new Date();
+      const diff = now - date;
+      
+      if (timelineRange === '24h') {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (timelineRange === '7d') {
+        return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit' });
+      } else if (timelineRange === '30d') {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      } else {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+    }
+    
+    function toggleTimeline() {
+      const btn = document.getElementById('timelineToggle');
+      timelinePlaying = !timelinePlaying;
+      
+      if (timelinePlaying) {
+        btn.classList.add('playing');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>`;
+        document.querySelector('.timeline-scrubber').classList.add('active');
+        startTimelinePlayback();
+      } else {
+        btn.classList.remove('playing');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>`;
+        stopTimelinePlayback();
+      }
+    }
+    
+    function startTimelinePlayback() {
+      if (timelineInterval) clearInterval(timelineInterval);
+      
+      timelineInterval = setInterval(() => {
+        timelinePosition -= 0.5;
+        if (timelinePosition <= 0) {
+          timelinePosition = 100;
+        }
+        updateTimelinePosition();
+      }, timelinePlaybackSpeed / 100);
+    }
+    
+    function stopTimelinePlayback() {
+      if (timelineInterval) {
+        clearInterval(timelineInterval);
+        timelineInterval = null;
+      }
+    }
+    
+    function updateTimelinePosition() {
+      const progress = document.getElementById('scrubberProgress');
+      const handle = document.getElementById('scrubberHandle');
+      if (progress) progress.style.width = timelinePosition + '%';
+      if (handle) handle.style.left = timelinePosition + '%';
+      applyTimelineFilter();
+    }
+    
+    function applyTimelineFilter(animate = false) {
+      if (timelineRange === 'all') {
+        filteredAllEvents = [...allEvents];
+      } else {
+        const cutoffTime = timelineStartTime + (getRangeMs(timelineRange) * (timelinePosition / 100));
+        filteredAllEvents = allEvents.filter(e => e.time && e.time <= cutoffTime);
+      }
+      
+      let filtered = filteredAllEvents;
+      if (currentFilter !== 'all') {
+        filtered = filteredAllEvents.filter(e => e.category === currentFilter);
+      }
+      renderEventsList(filtered);
+      
+      window.globeAPI.loadEvents(filteredAllEvents, animate);
+    }
+    
+    function toggleTimelinePanel() {
+      const scrubber = document.querySelector('.timeline-scrubber');
+      if (scrubber) {
+        scrubber.classList.toggle('active');
+      }
+    }
+    
+    function setGlobeMode(mode) {
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.mode === mode) btn.classList.add('active');
+      });
+      
+      window.globeAPI.setMode(mode);
+    }
+    
+    function toggleAnalytics() {
+      const panel = document.getElementById('analyticsPanel');
+      const detail = document.getElementById('detailContent');
+      const placeholder = document.getElementById('detailPlaceholder');
+      
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        detail.style.display = 'none';
+        placeholder.style.display = 'none';
+        renderAnalytics();
+      } else {
+        panel.style.display = 'none';
+        detail.style.display = 'none';
+        placeholder.style.display = 'flex';
+      }
+    }
+    
+    function renderAnalytics() {
+      renderCategoryChart();
+      renderRegionBars();
+      renderSeverityChart();
+    }
+    
+    function renderCategoryChart() {
+      const canvas = document.getElementById('categoryChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const categories = {};
+      
+      filteredAllEvents.forEach(e => {
+        const cat = e.category || 'other';
+        categories[cat] = (categories[cat] || 0) + 1;
+      });
+      
+      const labels = Object.keys(categories);
+      const values = Object.values(categories);
+      const total = values.reduce((a, b) => a + b, 0) || 1;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const colors = {
+        news: '#3b82f6',
+        tech: '#a855f7',
+        conflict: '#ef4444',
+        earthquake: '#f97316'
+      };
+      
+      let startAngle = 0;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 10;
+      
+      values.forEach((val, i) => {
+        const sliceAngle = (val / total) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+        ctx.fillStyle = colors[labels[i]] || '#64748b';
+        ctx.fill();
+        startAngle += sliceAngle;
+      });
+      
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.5, 0, 2 * Math.PI);
+      ctx.fillStyle = '#111827';
+      ctx.fill();
+      
+      ctx.fillStyle = '#f1f5f9';
+      ctx.font = '12px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(total.toString(), centerX, centerY + 4);
+    }
+    
+    function renderRegionBars() {
+      const container = document.getElementById('regionBars');
+      if (!container) return;
+      
+      const regionCounts = {};
+      filteredAllEvents.forEach(e => {
+        const region = e.region || 'Unknown';
+        regionCounts[region] = (regionCounts[region] || 0) + 1;
+      });
+      
+      const sorted = Object.entries(regionCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+      
+      const max = sorted[0]?.[1] || 1;
+      
+      container.innerHTML = sorted.map(([name, count]) => {
+        const percent = (count / max) * 100;
+        return `
+          <div class="region-bar-item">
+            <span class="region-bar-name">${name}</span>
+            <div class="region-bar-track">
+              <div class="region-bar-fill" style="width: ${percent}%; background: var(--info);"></div>
+            </div>
+            <span class="region-bar-value">${count}</span>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function renderSeverityChart() {
+      const canvas = document.getElementById('severityChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const severities = { critical: 0, high: 0, medium: 0, low: 0 };
+      
+      filteredAllEvents.forEach(e => {
+        const sev = e.severity || 'low';
+        if (severities[sev] !== undefined) {
+          severities[sev]++;
+        }
+      });
+      
+      const values = Object.values(severities);
+      const max = Math.max(...values, 1);
+      const barWidth = (canvas.width - 20) / 4;
+      const colors = { critical: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#3b82f6' };
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      Object.entries(severities).forEach(([sev, val], i) => {
+        const height = (val / max) * (canvas.height - 20);
+        const x = 10 + i * barWidth;
+        const y = canvas.height - 10 - height;
+        
+        ctx.fillStyle = colors[sev];
+        ctx.fillRect(x + 5, y, barWidth - 10, height);
+        
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(val.toString(), x + barWidth / 2, canvas.height - 5);
+      });
+    }
+    
+    function toggleExportMenu() {
+      const menu = document.getElementById('exportMenu');
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function exportToJSON() {
+      const data = JSON.stringify(filteredAllEvents, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `corex-events-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toggleExportMenu();
+    }
+    
+    function exportToCSV() {
+      const headers = ['id', 'title', 'category', 'severity', 'source', 'lat', 'lng', 'time'];
+      const rows = filteredAllEvents.map(e => 
+        headers.map(h => {
+          const val = e[h];
+          if (val === null || val === undefined) return '';
+          return '"' + String(val).replace(/"/g, '""') + '"';
+        }).join(',')
+      );
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `corex-events-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toggleExportMenu();
+    }
+    
+    function copyShareLink() {
+      const params = new URLSearchParams();
+      params.set('filter', currentFilter);
+      params.set('range', timelineRange);
+      
+      const url = `${window.location.origin}?${params.toString()}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Share link copied to clipboard!');
+      });
+      toggleExportMenu();
+    }
   </script>
 </body>
 </html>

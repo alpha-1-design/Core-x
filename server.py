@@ -17,6 +17,9 @@ SERVICES_CONTENT = None
 
 NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
 USE_NEWS_API = os.environ.get('USE_NEWS_API', 'false').lower() == 'true'
+LLM_API_KEY = os.environ.get('LLM_API_KEY', '')
+LLM_PROVIDER = os.environ.get('LLM_PROVIDER', 'openai')
+ENABLE_AI_SUMMARY = os.environ.get('ENABLE_AI_SUMMARY', 'false').lower() == 'true'
 USGS_API = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson'
 GDELT_API = 'https://api.gdeltproject.org/v2/articlepubapi?mode=artlist&format=json&sort=DateDesc'
 
@@ -671,6 +674,187 @@ def cache_status():
         "age_seconds": age,
         "needs_refresh": age > data.cache_ttl if age else True
     })
+
+
+def _extractive_summarize(text, num_sentences=2):
+    if not text or len(text) < 50:
+        return text or "No description available."
+    
+    import re
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
+    
+    if len(sentences) <= num_sentences:
+        return text
+    
+    stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
+                'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+                'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
+                'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she',
+                'we', 'they', 'what', 'which', 'who', 'when', 'where', 'why', 'how'}
+    
+    def score_sentence(s):
+        words = re.findall(r'\b[a-zA-Z]+\b', s.lower())
+        score = sum(1 for w in words if w not in stop_words)
+        return score * (1 + 0.1 * len(words))
+    
+    scored = [(s, score_sentence(s)) for s in sentences]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    
+    top_sentences = [s[0] for s in scored[:num_sentences]]
+    top_sentences.sort(key=lambda s: sentences.index(s))
+    
+    return ' '.join(top_sentences)
+
+
+@app.route('/api/summarize', methods=['POST'])
+def summarize():
+    data.ensure_fresh()
+    payload = request.get_json()
+    event_id = payload.get('event_id')
+    text = payload.get('text', '')
+    
+    if event_id:
+        event = next((e for e in data.events if e.get('id') == event_id), None)
+        if event:
+            text = event.get('description', '') or event.get('title', '')
+    
+    summary = _extractive_summarize(text)
+    
+    return jsonify({
+        'summary': summary,
+        'original_length': len(text),
+        'summary_length': len(summary)
+    })
+
+
+@app.route('/api/sentiment', methods=['POST'])
+def sentiment():
+    data.ensure_fresh()
+    payload = request.get_json()
+    event_id = payload.get('event_id')
+    text = payload.get('text', '')
+    
+    if event_id:
+        event = next((e for e in data.events if e.get('id') == event_id), None)
+        if event:
+            text = (event.get('description', '') + ' ' + event.get('title', ''))
+    
+    text_lower = text.lower()
+    positive_words = ['growth', 'increase', 'success', 'deal', 'agreement', 'peace', 'help', 'support', 'positive']
+    negative_words = ['death', 'kill', 'attack', 'war', 'crisis', 'disaster', 'emergency', 'crash', 'fail', 'fear']
+    
+    pos_count = sum(1 for w in positive_words if w in text_lower)
+    neg_count = sum(1 for w in negative_words if w in text_lower)
+    
+    if neg_count > pos_count:
+        sentiment = 'negative'
+        score = -min(1, neg_count * 0.3)
+    elif pos_count > neg_count:
+        sentiment = 'positive'
+        score = min(1, pos_count * 0.3)
+    else:
+        sentiment = 'neutral'
+        score = 0
+    
+    return jsonify({
+        'sentiment': sentiment,
+        'score': score,
+        'positive_mentions': pos_count,
+        'negative_mentions': neg_count
+    })
+
+
+webhook_configs = {}
+
+
+@app.route('/api/alerts', methods=['GET'])
+def get_alerts():
+    return jsonify({'webhooks': list(webhook_configs.values())})
+
+
+@app.route('/api/alerts', methods=['POST'])
+def add_alert():
+    payload = request.get_json()
+    webhook_id = payload.get('id', f"webhook_{len(webhook_configs)}")
+    webhook_url = payload.get('url')
+    alert_type = payload.get('type', 'discord')
+    filters = payload.get('filters', {})
+    
+    if not webhook_url:
+        return jsonify({'error': 'URL required'}), 400
+    
+    webhook_configs[webhook_id] = {
+        'id': webhook_id,
+        'url': webhook_url,
+        'type': alert_type,
+        'filters': filters
+    }
+    
+    return jsonify({'status': 'added', 'webhook': webhook_configs[webhook_id]})
+
+
+@app.route('/api/alerts/<webhook_id>', methods=['DELETE'])
+def delete_alert(webhook_id):
+    if webhook_id in webhook_configs:
+        del webhook_configs[webhook_id]
+        return jsonify({'status': 'deleted'})
+    return jsonify({'error': 'Not found'}), 404
+
+
+def _send_webhook_alert(event):
+    for config in webhook_configs.values():
+        try:
+            if config['type'] == 'discord':
+                _send_discord_alert(config['url'], event)
+            elif config['type'] == 'slack':
+                _send_slack_alert(config['url'], event)
+        except Exception as e:
+            logging.error(f"Webhook error: {e}")
+
+
+def _send_discord_alert(url, event):
+    payload = {
+        'embeds': [{
+            'title': event.get('title', 'Event Alert'),
+            'description': event.get('description', '')[:1000],
+            'color': 0xef4444 if event.get('severity') == 'critical' else 0xf97316 if event.get('severity') == 'high' else 0x3b82f6,
+            'fields': [
+                {'name': 'Category', 'value': event.get('category', 'N/A'), 'inline': True},
+                {'name': 'Severity', 'value': event.get('severity', 'N/A').upper(), 'inline': True},
+                {'name': 'Source', 'value': event.get('source', 'N/A'), 'inline': True}
+            ],
+            'timestamp': datetime.fromtimestamp(event.get('time', 0) / 1000).isoformat() if event.get('time') else None
+        }]
+    }
+    requests.post(url, json=payload, timeout=10)
+
+
+def _send_slack_alert(url, event):
+    payload = {
+        'text': f"*{event.get('title', 'Event Alert')}*",
+        'blocks': [
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': f"*{event.get('severity', 'N/A').upper()}* - {event.get('category', 'N/A')}"
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': event.get('description', '')[:500]
+                }
+            }
+        ]
+    }
+    requests.post(url, json=payload, timeout=10)
+
+
+from datetime import datetime
 
 
 if __name__ == '__main__':

@@ -49,6 +49,34 @@ const api = {
       console.error('Failed to fetch stats:', e);
       return null;
     }
+  },
+
+  async summarize(eventId) {
+    try {
+      const res = await fetch(`${API_BASE}/api/summarize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: eventId })
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to summarize:', e);
+      return null;
+    }
+  },
+
+  async analyzeSentiment(eventId) {
+    try {
+      const res = await fetch(`${API_BASE}/api/sentiment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: eventId })
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to analyze sentiment:', e);
+      return null;
+    }
   }
 };
 
