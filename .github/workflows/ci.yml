@@ -22,6 +22,24 @@ jobs:
       run: |
         python -m py_compile server.py
 
-    - name: Check imports
+    - name: Test imports
       run: |
-        python -c "import server"
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from server import app, GlobalWatchData, rate_limiter
+        data = GlobalWatchData()
+        assert hasattr(data, 'ensure_fresh'), 'Missing ensure_fresh method'
+        assert hasattr(data, 'get_events'), 'Missing get_events method'
+        print('All checks passed!')
+        "
+
+    - name: Run Flask test client
+      run: |
+        python -c "
+        from server import app
+        with app.test_client() as client:
+            resp = client.get('/health')
+            assert resp.status_code == 200, f'Health check failed: {resp.status_code}'
+            print(f'Health check: {resp.status_code}')
+        "
