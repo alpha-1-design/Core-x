@@ -97,6 +97,20 @@
 
     .filter-btn:hover { border-color: var(--info); color: var(--text-primary); }
     .filter-btn.active { background: var(--info); border-color: var(--info); color: white; }
+
+    .search-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      width: 180px;
+      outline: none;
+    }
+
+    .search-input:focus { border-color: var(--info); }
+
     .filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; }
 
     .header-right {
@@ -551,6 +565,71 @@
       cursor: not-allowed;
     }
 
+    .share-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: var(--text);
+      background: var(--bg-card);
+      transition: all 0.2s;
+    }
+
+    .share-btn:hover {
+      background: var(--bg-deep);
+      transform: translateY(-1px);
+    }
+
+    .share-btn.twitter { border-color: #1da1f2; color: #1da1f2; }
+    .share-btn.facebook { border-color: #4267b2; color: #4267b2; }
+    .share-btn.linkedin { border-color: #0077b5; color: #0077b5; }
+    .share-btn.reddit { border-color: #ff4500; color: #ff4500; }
+    .share-btn.whatsapp { border-color: #25d366; color: #25d366; }
+    .share-btn.telegram { border-color: #0088cc; color: #0088cc; }
+    .share-btn.email { border-color: #ea4335; color: #ea4335; }
+    .share-btn.copy { border-color: var(--info); color: var(--info); }
+
+    .weather-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: var(--bg-deep);
+      border-radius: 8px;
+    }
+
+    .weather-icon {
+      font-size: 2rem;
+    }
+
+    .weather-info {
+      flex: 1;
+    }
+
+    .weather-temp {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .weather-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .weather-details {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
     .sentiment-bar {
       height: 8px;
       background: var(--bg-deep);
@@ -692,6 +771,149 @@
       background: var(--bg-deep);
     }
 
+    .predictions-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .predictions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .predictions-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .confidence-badge {
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .confidence-badge.high {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--critical);
+    }
+
+    .confidence-badge.medium {
+      background: rgba(249, 115, 22, 0.2);
+      color: var(--high);
+    }
+
+    .confidence-badge.low {
+      background: rgba(100, 116, 139, 0.2);
+      color: var(--text-muted);
+    }
+
+    .prediction-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--info);
+    }
+
+    .prediction-card.high {
+      border-left-color: var(--critical);
+    }
+
+    .prediction-card.medium {
+      border-left-color: var(--high);
+    }
+
+    .prediction-card.low {
+      border-left-color: var(--info);
+    }
+
+    .prediction-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .prediction-type {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .prediction-probability {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .prediction-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .prediction-description {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .prediction-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .predictions-timeline {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .timeline-selector {
+      display: flex;
+      gap: 8px;
+    }
+
+    .time-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .time-btn:hover {
+      border-color: var(--info);
+      color: var(--text-primary);
+    }
+
+    .time-btn.active {
+      background: var(--info);
+      border-color: var(--info);
+      color: white;
+    }
+
+    .predictive-btn {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(59, 130, 246, 0.2));
+      border-color: #a855f7;
+      color: #a855f7;
+    }
+
     footer {
       grid-column: 1 / -1;
       background: var(--bg-panel);
@@ -743,6 +965,7 @@
       </div>
       
       <div class="header-center">
+        <input type="text" id="searchInput" placeholder="Search events..." class="search-input" oninput="handleSearch()">
         <button class="filter-btn active" data-filter="all">
           All <span id="countAll">0</span>
         </button>
@@ -769,6 +992,12 @@
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
           </svg>
           Export
+        </button>
+        <button class="filter-btn predictive-btn" id="predictBtn" onclick="togglePredictions()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+          Predict
         </button>
       </div>
       
@@ -874,6 +1103,25 @@
         </div>
       </div>
       
+      <div class="predictions-panel" id="predictionsPanel" style="display: none;">
+        <div class="predictions-header">
+          <div class="predictions-title">AI Predictions</div>
+          <div class="confidence-badge" id="confidenceBadge">Low</div>
+        </div>
+        <div class="predictions-list" id="predictionsList">
+          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            Loading predictions...
+          </div>
+        </div>
+        <div class="predictions-timeline">
+          <div class="timeline-selector">
+            <button class="time-btn active" data-hours="24">24h</button>
+            <button class="time-btn" data-hours="48">48h</button>
+            <button class="time-btn" data-hours="72">72h</button>
+          </div>
+        </div>
+      </div>
+      
       <div class="detail-placeholder" id="detailPlaceholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -922,6 +1170,29 @@
         <div class="detail-section" id="extraDataSection" style="display: none;">
           <div class="detail-section-title">Additional Data</div>
           <div class="detail-info-card" id="extraDataContent"></div>
+        </div>
+        
+        <div class="detail-section" id="weatherSection" style="display: none;">
+          <div class="detail-section-title">Weather</div>
+          <div class="detail-info-card" id="weatherContent">
+            <div id="weatherLoading">Loading weather data...</div>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <div class="detail-section-title">Share</div>
+          <div class="detail-info-card">
+            <div class="share-buttons">
+              <button class="share-btn twitter" onclick="shareEvent('twitter')">𝕏 Twitter</button>
+              <button class="share-btn facebook" onclick="shareEvent('facebook')">f Facebook</button>
+              <button class="share-btn linkedin" onclick="shareEvent('linkedin')">in LinkedIn</button>
+              <button class="share-btn reddit" onclick="shareEvent('reddit')">⬆ Reddit</button>
+              <button class="share-btn whatsapp" onclick="shareEvent('whatsapp')">💬 WhatsApp</button>
+              <button class="share-btn telegram" onclick="shareEvent('telegram')">✈️ Telegram</button>
+              <button class="share-btn email" onclick="shareEvent('email')">📧 Email</button>
+              <button class="share-btn copy" onclick="shareEvent('copy')">📋 Copy Link</button>
+            </div>
+          </div>
         </div>
         
         <div class="detail-section">
@@ -1024,6 +1295,8 @@
         filterAndRenderEvents();
         updateGlobe();
         updateLastUpdate();
+        
+        document.getElementById('liveIndicator').classList.add('active');
       } catch (e) {
         console.error('Failed to load data:', e);
         if (showError) {
@@ -1052,7 +1325,18 @@
       if (currentFilter !== 'all') {
         filtered = filteredAllEvents.filter(e => e.category === currentFilter);
       }
+      const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+      if (searchTerm) {
+        filtered = filtered.filter(e => 
+          (e.title || '').toLowerCase().includes(searchTerm) || 
+          (e.description || '').toLowerCase().includes(searchTerm)
+        );
+      }
       renderEventsList(filtered);
+    }
+
+    function handleSearch() {
+      filterAndRenderEvents();
     }
 
     function renderEventsList(events) {
@@ -1140,8 +1424,103 @@
         extraSection.style.display = 'none';
       }
       
+      if (event.lat && event.lng) {
+        loadWeather(event.lat, event.lng);
+      } else {
+        document.getElementById('weatherSection').style.display = 'none';
+      }
+      
+      window.currentShareEvent = event;
+      
       generateSummary(event);
       analyzeSentiment(event);
+    }
+    
+    async function loadWeather(lat, lng) {
+      const section = document.getElementById('weatherSection');
+      const content = document.getElementById('weatherContent');
+      section.style.display = 'block';
+      content.innerHTML = '<div id="weatherLoading">Loading weather data...</div>';
+      
+      try {
+        const res = await fetch(`/api/weather/${lat}/${lng}`);
+        const data = await res.json();
+        
+        if (data.temperature !== undefined) {
+          const code = data.weather_code || 0;
+          const weather = getWeatherDescription(code);
+          const icon = getWeatherIcon(code);
+          
+          content.innerHTML = `
+            <div class="weather-card">
+              <div class="weather-icon">${icon}</div>
+              <div class="weather-info">
+                <div class="weather-temp">${data.temperature}°C</div>
+                <div class="weather-desc">${weather}</div>
+                <div class="weather-details">
+                  Wind: ${data.wind_speed || 'N/A'} km/h | Humidity: ${data.humidity || 'N/A'}%
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          content.innerHTML = '<div style="color: var(--text-muted);">Weather data unavailable</div>';
+        }
+      } catch (e) {
+        content.innerHTML = '<div style="color: var(--text-muted);">Failed to load weather</div>';
+      }
+    }
+    
+    function getWeatherDescription(code) {
+      const codes = {
+        0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog', 51: 'Light drizzle',
+        53: 'Drizzle', 55: 'Dense drizzle', 61: 'Slight rain',
+        63: 'Rain', 65: 'Heavy rain', 71: 'Slight snow', 73: 'Snow',
+        75: 'Heavy snow', 80: 'Rain showers', 95: 'Thunderstorm'
+      };
+      return codes[code] || 'Unknown';
+    }
+    
+    function getWeatherIcon(code) {
+      if (code === 0 || code === 1) return '☀️';
+      if (code === 2) return '⛅';
+      if (code === 3) return '☁️';
+      if (code >= 45 && code <= 48) return '🌫️';
+      if (code >= 51 && code <= 55) return '🌧️';
+      if (code >= 61 && code <= 65) return '🌧️';
+      if (code >= 71 && code <= 75) return '❄️';
+      if (code >= 80) return '⛈️';
+      return '🌡️';
+    }
+    
+    function shareEvent(platform) {
+      const event = window.currentShareEvent;
+      if (!event) return;
+      
+      const title = `${event.category?.toUpperCase()}: ${event.title}`;
+      const url = event.url || window.location.href;
+      const text = `${title}\n\n${(event.description || '').substring(0, 200)}...\n\nView on Global Watch`;
+      
+      if (platform === 'twitter') {
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+      } else if (platform === 'facebook') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, '_blank');
+      } else if (platform === 'linkedin') {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+      } else if (platform === 'reddit') {
+        window.open(`https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank');
+      } else if (platform === 'whatsapp') {
+        window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+      } else if (platform === 'telegram') {
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+      } else if (platform === 'email') {
+        window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text + '\n\n' + url)}`, '_blank');
+      } else if (platform === 'copy') {
+        navigator.clipboard.writeText(`${title}\n${url}`).then(() => {
+          alert('Link copied to clipboard!');
+        });
+      }
     }
     
     async function generateSummary(event) {
@@ -1678,6 +2057,72 @@
         alert('Share link copied to clipboard!');
       });
       toggleExportMenu();
+    }
+    
+    let predictHours = 24;
+    
+    async function togglePredictions() {
+      const panel = document.getElementById('predictionsPanel');
+      const analytics = document.getElementById('analyticsPanel');
+      const detail = document.getElementById('detailContent');
+      const placeholder = document.getElementById('detailPlaceholder');
+      
+      if (panel.style.display === 'none') {
+        analytics.style.display = 'none';
+        detail.style.display = 'none';
+        placeholder.style.display = 'none';
+        panel.style.display = 'block';
+        await loadPredictions();
+      } else {
+        panel.style.display = 'none';
+        placeholder.style.display = 'flex';
+      }
+    }
+    
+    async function loadPredictions() {
+      const list = document.getElementById('predictionsList');
+      const badge = document.getElementById('confidenceBadge');
+      
+      list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">Loading predictions...</div>';
+      
+      try {
+        const res = await fetch(`/api/predict?hours=${predictHours}`);
+        const data = await res.json();
+        
+        badge.textContent = data.confidence || 'Low';
+        badge.className = 'confidence-badge ' + (data.confidence || 'low');
+        
+        if (!data.predictions || data.predictions.length === 0) {
+          list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">No predictions available. Need more data.</div>';
+          return;
+        }
+        
+        list.innerHTML = data.predictions.map(p => `
+          <div class="prediction-card ${p.severity || 'low'}">
+            <div class="prediction-header">
+              <span class="prediction-type">${p.type}</span>
+              <span class="prediction-probability">${Math.round((p.probability || 0) * 100)}%</span>
+            </div>
+            <div class="prediction-title">${p.title}</div>
+            <div class="prediction-description">${p.description}</div>
+            <div class="prediction-meta">
+              <span>Timeframe: ${p.timeframe || 'N/A'}</span>
+            </div>
+          </div>
+        `).join('');
+        
+        document.querySelectorAll('.time-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            predictHours = parseInt(btn.dataset.hours);
+            await loadPredictions();
+          });
+        });
+      } catch (e) {
+        console.error('Prediction error:', e);
+        list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--critical);">Failed to load predictions</div>';
+      }
     }
   </script>
 </body>

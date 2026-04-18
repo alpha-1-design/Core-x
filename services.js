@@ -77,6 +77,26 @@ const api = {
       console.error('Failed to analyze sentiment:', e);
       return null;
     }
+  },
+
+  async getPredictions(hours = 24) {
+    try {
+      const res = await fetch(`${API_BASE}/api/predict?hours=${hours}`);
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch predictions:', e);
+      return null;
+    }
+  },
+
+  async getWeather(lat, lng) {
+    try {
+      const res = await fetch(`${API_BASE}/api/weather/${lat}/${lng}`);
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch weather:', e);
+      return null;
+    }
   }
 };
 
