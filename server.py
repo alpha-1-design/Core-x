@@ -396,6 +396,232 @@ class GlobalWatchData:
             pass
         return int(time.time() * 1000)
 
+    def _extract_tech_coords(self, title):
+        title_lower = title.lower()
+        tech_locations = {
+            'san francisco': (37.77, -122.41),
+            'silicon valley': (37.39, -122.08),
+            'mountain view': (37.38, -122.08),
+            'palo alto': (37.44, -122.14),
+            'seattle': (47.60, -122.33),
+            'new york': (40.71, -74.00),
+            'london': (51.50, -0.12),
+            'berlin': (52.52, 13.40),
+            'tokyo': (35.67, 139.65),
+            'singapore': (1.35, 103.81),
+            'shenzhen': (22.54, 114.05),
+            'beijing': (39.90, 116.40),
+            'sydney': (-33.86, 151.20),
+            'toronto': (43.65, -79.38),
+            'boston': (42.36, -71.06),
+            'austin': (30.26, -97.74),
+        }
+        for loc, coords in tech_locations.items():
+            if loc in title_lower:
+                return coords
+        return None, None
+
+    def _extract_coords_from_gdelt(self, article):
+        text = f"{article.get('title', '')} {article.get('context', '')} {article.get('locations', '')}"
+        return self._guess_location_from_title(text)
+
+    def _guess_location_from_title(self, text):
+        text_lower = text.lower()
+        
+        location_map = {
+            'israel': (31.04, 34.85), 'gaza': (31.35, 34.30), 'palestine': (31.95, 35.15),
+            'ukraine': (48.37, 31.16), 'russia': (61.52, 105.31), 'moscow': (55.75, 37.61),
+            'china': (35.86, 104.19), 'beijing': (39.90, 116.40), 'shenzhen': (22.54, 114.05),
+            'iran': (32.42, 53.68), 'tehran': (35.68, 51.38),
+            'usa': (37.09, -95.71), 'united states': (37.09, -95.71), 'washington': (38.90, -77.03),
+            'uk': (55.37, -3.43), 'britain': (55.37, -3.43), 'london': (51.50, -0.12),
+            'france': (46.22, 2.21), 'paris': (48.85, 2.35),
+            'germany': (51.16, 10.45), 'berlin': (52.52, 13.40),
+            'japan': (36.20, 138.25), 'tokyo': (35.67, 139.65),
+            'india': (20.59, 78.96), 'delhi': (28.61, 77.20),
+            'brazil': (-14.23, -51.92), 'sao paulo': (-23.55, -46.63),
+            'australia': (-25.27, 133.77), 'sydney': (-33.86, 151.20),
+            'south korea': (35.90, 127.76), 'seoul': (37.56, 126.97),
+            'taiwan': (23.69, 120.96), 'taipei': (25.03, 121.56),
+            'middle east': (29.30, 47.50),
+            'europe': (48.85, 9.18),
+            'africa': (1.28, 38.74),
+            'asia': (35.86, 104.19),
+            'san francisco': (37.77, -122.41), 'silicon valley': (37.39, -122.08),
+            'texas': (31.96, -99.90), 'austin': (30.26, -97.74),
+            'florida': (27.66, -81.51), 'miami': (25.76, -80.19),
+            'canada': (56.13, -106.34), 'toronto': (43.65, -79.38),
+            'mexico': (23.63, -102.55),
+            'egypt': (26.82, 30.80), 'cairo': (30.04, 31.23),
+            'turkey': (38.96, 35.24), 'istanbul': (41.00, 28.97),
+            'saudi': (23.88, 45.07), 'uae': (24.45, 54.37),
+            'pakistan': (30.37, 69.34), 'afghanistan': (33.93, 67.70),
+            'iraq': (33.22, 43.67), 'syria': (34.80, 38.99),
+        }
+        
+        for loc, coords in location_map.items():
+            if loc in text_lower:
+                return coords
+        return None, None
+
+    def _generate_demo_news(self):
+        demo_events = [
+            {'lat': 31.76, 'lng': 35.21, 'title': 'Middle East tensions escalate', 'category': 'politics', 'severity': 'high'},
+            {'lat': 52.52, 'lng': 13.40, 'title': 'Tech summit addresses AI regulation', 'category': 'tech', 'severity': 'medium'},
+            {'lat': 55.75, 'lng': 37.61, 'title': 'Diplomatic discussions continue', 'category': 'politics', 'severity': 'medium'},
+            {'lat': 39.90, 'lng': 116.40, 'title': 'Economic indicators show growth', 'category': 'business', 'severity': 'low'},
+            {'lat': 35.67, 'lng': 139.65, 'title': 'New technology partnership announced', 'category': 'tech', 'severity': 'low'},
+            {'lat': 51.50, 'lng': -0.12, 'title': 'Parliamentary session underway', 'category': 'politics', 'severity': 'medium'},
+            {'lat': -33.86, 'lng': 151.20, 'title': 'Regional trade agreement signed', 'category': 'business', 'severity': 'medium'},
+            {'lat': 25.20, 'lng': 55.27, 'title': 'Infrastructure development continues', 'category': 'business', 'severity': 'low'},
+            {'lat': -23.55, 'lng': -46.63, 'title': 'Environmental initiative launched', 'category': 'world', 'severity': 'low'},
+            {'lat': 28.61, 'lng': 77.20, 'title': 'Digital transformation push', 'category': 'tech', 'severity': 'medium'},
+        ]
+        for i, ev in enumerate(demo_events):
+            event = {
+                'id': f"demo_{i}",
+                'category': ev['category'],
+                'title': ev['title'],
+                'description': '',
+                'lat': ev['lat'],
+                'lng': ev['lng'],
+                'source': 'Demo Feed',
+                'time': int(time.time() * 1000) - (i * 300000),
+                'severity': ev['severity']
+            }
+            self.events.append(event)
+            self._assign_to_region(event)
+
+    def _extract_coords(self, article):
+        title = (article.get('title', '') + ' ' + article.get('description', '')).lower()
+        
+        location_map = {
+            'israel': (31.04, 34.85), 'gaza': (31.35, 34.30), 'palestine': (31.95, 35.15),
+            'ukraine': (48.37, 31.16), 'russia': (61.52, 105.31), 'moscow': (55.75, 37.61),
+            'china': (35.86, 104.19), 'beijing': (39.90, 116.40),
+            'iran': (32.42, 53.68), 'tehran': (35.68, 51.38),
+            'usa': (37.09, -95.71), 'united states': (37.09, -95.71), 'washington': (38.90, -77.03),
+            'uk': (55.37, -3.43), 'britain': (55.37, -3.43), 'london': (51.50, -0.12),
+            'france': (46.22, 2.21), 'paris': (48.85, 2.35),
+            'germany': (51.16, 10.45), 'berlin': (52.52, 13.40),
+            'japan': (36.20, 138.25), 'tokyo': (35.67, 139.65),
+            'india': (20.59, 78.96), 'delhi': (28.61, 77.20),
+            'brazil': (-14.23, -51.92), 'sao paulo': (-23.55, -46.63),
+            'australia': (-25.27, 133.77), 'sydney': (-33.86, 151.20),
+            'south korea': (35.90, 127.76), 'seoul': (37.56, 126.97),
+            'taiwan': (23.69, 120.96), 'taipei': (25.03, 121.56),
+            'middle east': (29.30, 47.50),
+            'europe': (48.85, 9.18),
+            'africa': (1.28, 38.74),
+            'asia': (35.86, 104.19),
+        }
+        
+        for loc, coords in location_map.items():
+            if loc in title:
+                return coords
+        return None, None
+
+    def _categorize_news(self, article):
+        title = (article.get('title', '') + ' ' + article.get('description', '')).lower()
+        
+        if any(w in title for w in ['war', 'conflict', 'attack', 'military', 'troops', 'battle', 'strike']):
+            return 'conflict'
+        elif any(w in title for w in ['ai', 'tech', 'startup', 'software', 'google', 'apple', 'microsoft', 'nvidia', 'cryptocurrency', 'bitcoin']):
+            return 'tech'
+        elif any(w in title for w in ['earthquake', 'flood', 'storm', 'hurricane', 'disaster', 'tsunami']):
+            return 'disaster'
+        else:
+            return 'news'
+
+    def _assess_severity(self, title, desc):
+        text = (title + ' ' + desc).lower()
+        critical = ['war', 'attack', 'killed', 'death', 'disaster', 'crisis', 'breaking']
+        high = ['conflict', 'tension', 'threat', 'warning', 'emergency']
+        
+        if any(w in text for w in critical):
+            return 'critical'
+        elif any(w in text for w in high):
+            return 'high'
+        elif 'moderate' in text or 'concern' in text:
+            return 'medium'
+        return 'low'
+
+    def _assess_impact(self, title):
+        title_lower = title.lower()
+        high_impact_keywords = ['war', 'crisis', 'disaster', 'emergency', 'attack', 'breaking', 'deadly', 'major']
+        medium_impact_keywords = ['conflict', 'tension', 'protest', 'election', 'climate', 'economic']
+        
+        if any(k in title_lower for k in high_impact_keywords):
+            return 'This is a high-impact story with significant global implications.'
+        elif any(k in title_lower for k in medium_impact_keywords):
+            return 'This story is gaining attention for its regional or sector impact.'
+        return 'This story is trending among the community.'
+
+    def _haversine_km(self, lat1, lon1, lat2, lon2):
+        import math
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+    def _assign_to_region(self, event):
+        lat, lng = event.get('lat'), event.get('lng')
+        if lat is None or lng is None:
+            return
+        
+        for code, region in self.regions.items():
+            rlat, rlng = region['lat'], region['lng']
+            distance = self._haversine_km(lat, lng, rlat, rlng)
+            if distance < 500:
+                region['events'].append(event['id'])
+                region['categories'][event['category']] = region['categories'].get(event['category'], 0) + 1
+                event['region'] = code
+
+    def _calculate_scores(self):
+        for region in self.regions.values():
+            base_score = len(region['events']) * 5
+            
+            for event in region['events']:
+                ev = next((e for e in self.events if e['id'] == event), None)
+                if ev:
+                    if ev.get('severity') == 'critical':
+                        base_score += 40
+                    elif ev.get('severity') == 'high':
+                        base_score += 25
+                    elif ev.get('severity') == 'medium':
+                        base_score += 10
+                    
+                    if ev.get('category') == 'conflict':
+                        base_score += 15
+                    elif ev.get('category') == 'earthquake':
+                        base_score += 20
+            
+            region['score'] = min(100, base_score)
+
+    def get_events(self, category=None, lat=None, lng=None, radius=500, search=''):
+        events = self.events
+        if category:
+            events = [e for e in events if e.get('category') == category]
+        if search:
+            search_lower = search.lower()
+            events = [e for e in events if search_lower in e.get('title', '').lower() or search_lower in e.get('description', '').lower()]
+        if lat is not None and lng is not None:
+            filtered = []
+            for e in events:
+                if 'lat' in e and 'lng' in e:
+                    dist = self._haversine_km(lat, lng, e['lat'], e['lng'])
+                    if dist <= radius:
+                        filtered.append(e)
+            events = filtered
+        return sorted(events, key=lambda x: x.get('time', 0), reverse=True)
+
+    def get_regions(self):
+        return list(self.regions.values())
+
+    def get_region(self, code):
+        return self.regions.get(code.upper())
+
 
 class SimpleML:
     def linear_regression(self, x, y):
