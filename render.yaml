@@ -3,7 +3,7 @@ services:
     name: gcc2050
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --worker-class eventlet -w 1 server:app -b :10000
+    startCommand: gunicorn -k eventlet -w 1 server:app -b :10000
     repo: https://github.com/alpha-1-design/Core-x
     branch: main
     healthCheckPath: /health
