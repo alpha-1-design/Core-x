@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import threading
+import logging
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -861,17 +862,15 @@ class GlobalWatchData:
 
 data = GlobalWatchData()
 
-logging.info('Initial data fetch...')
-data.ensure_fresh(force=True)
-logging.info(f'Loaded {len(data.events)} events on startup')
-
-
-import logging
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s: %(message)s'
 )
+
+logging.info('Initial data fetch...')
+data.ensure_fresh(force=True)
+logging.info(f'Loaded {len(data.events)} events on startup')
+
 
 def _load_static_files():
     global HTML_CONTENT, JS_CONTENT, SERVICES_CONTENT
