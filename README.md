@@ -11,7 +11,13 @@ Global Watch puts the world's events in front of you as they happen. Natural dis
 **Live 3D Globe**
 
 - Interactive Earth visualization
-- Drag to rotate, scroll to zoom
+- Drag to rotate, scroll to zoom, double-click to zoom
+- Keyboard controls: arrows to rotate, +/- to zoom, Home to reset
+- Pinch-to-zoom on touch devices
+- Hover tooltips on markers
+- Fly-to animations on event selection
+- Minimap for orientation
+- Atmosphere with real-time sun position
 - Hotspots light up by region activity level
 
 **Multiple Data Sources**
