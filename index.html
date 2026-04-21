@@ -1285,12 +1285,15 @@
 
     async function loadData(showError = true) {
       try {
-        const [events, stats] = await Promise.all([
+        const [events, stats, fetchedRegions] = await Promise.all([
           api.getEvents(),
-          api.getStats()
+          api.getStats(),
+          api.getRegions()
         ]);
         
         allEvents = events;
+        regions = fetchedRegions || [];
+        window.regions = regions;
         updateStats(stats);
         filterAndRenderEvents();
         updateGlobe();

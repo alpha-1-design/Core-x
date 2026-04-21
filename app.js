@@ -617,8 +617,10 @@ function findNearestRegion(lat, lng) {
   let nearest = null;
   let minDist = Infinity;
   
-  const regionList = Object.values(window.regions || {});
+  const regionData = window.regions || {};
+  const regionList = Array.isArray(regionData) ? regionData : Object.values(regionData || {});
   for (const region of regionList) {
+    if (!region || !region.lat || !region.lng) continue;
     const dist = Math.sqrt((lat - region.lat) ** 2 + (lng - region.lng) ** 2);
     if (dist < minDist) {
       minDist = dist;
