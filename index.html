@@ -945,9 +945,75 @@
     @media (max-width: 900px) {
       .app-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 60px 1fr 300px 50px;
+        grid-template-rows: 60px 1fr 50px;
       }
       .left-panel, .right-panel { display: none; }
+    }
+
+    @media (max-width: 900px) and (orientation: landscape) {
+      .app-container {
+        grid-template-columns: 200px 1fr 220px;
+        grid-template-rows: 50px 1fr;
+      }
+      header {
+        padding: 0 10px;
+      }
+      .logo h1 { font-size: 0.9rem; }
+      .header-center { gap: 4px; }
+      .search-input { width: 100px; padding: 6px 10px; }
+      .filter-btn { padding: 6px 10px; font-size: 0.75rem; }
+      .left-panel, .right-panel { 
+        display: block;
+        overflow-y: auto;
+      }
+      .left-panel { max-height: calc(100vh - 100px); }
+      .right-panel { max-height: calc(100vh - 100px); }
+    }
+
+    .panel-toggle {
+      position: fixed;
+      bottom: 70px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--info);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    @media (max-width: 900px) {
+      .panel-toggle { display: flex; align-items: center; justify-content: center; }
+      .left-panel, .right-panel { 
+        display: none; 
+        position: fixed;
+        z-index: 999;
+        background: var(--bg-panel);
+        top: 50px;
+        bottom: 50px;
+        overflow-y: auto;
+      }
+      .left-panel {
+        left: 0;
+        width: 75%;
+        max-width: 260px;
+      }
+      .right-panel {
+        right: 0;
+        width: 75%;
+        max-width: 280px;
+      }
+      .left-panel.show, .right-panel.show { display: block; }
+    }
+
+    @media (max-width: 500px) {
+      .left-panel { width: 85%; }
+      .right-panel { width: 85%; }
     }
   </style>
 </head>
@@ -1211,9 +1277,16 @@
             </div>
             <span id="sentimentLabel" class="sentiment-label">-</span>
           </div>
-        </div>
-      </div>
+</div>
     </div>
+
+    <button class="panel-toggle left" onclick="togglePanel('left')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <button class="panel-toggle" onclick="togglePanel('right')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
 
     <footer>
       <div class="footer-left">
@@ -1341,6 +1414,51 @@
     function handleSearch() {
       filterAndRenderEvents();
     }
+
+    function togglePanel(side) {
+      const panel = document.querySelector(side === 'left' ? '.left-panel' : '.right-panel');
+      panel.classList.toggle('show');
+    }
+
+    function checkMobileLayout() {
+      const isMobile = window.innerWidth <= 900;
+      const isLandscape = window.innerWidth > window.innerHeight;
+      
+      document.querySelectorAll('.panel-toggle').forEach(b => {
+        b.style.display = isMobile ? 'flex' : 'none';
+      });
+      
+      if (isMobile && isLandscape) {
+        document.querySelectorAll('.left-panel, .right-panel').forEach((p, i) => {
+          p.classList.remove('show');
+          p.style.display = 'block';
+          p.style.position = 'relative';
+          p.style.top = 'auto';
+          p.style.bottom = 'auto';
+          p.style.width = i === 0 ? '200px' : '220px';
+          p.style.maxWidth = i === 0 ? '200px' : '220px';
+        });
+      } else if (isMobile) {
+        document.querySelectorAll('.left-panel, .right-panel').forEach(p => {
+          p.classList.remove('show');
+          p.style.display = 'none';
+          p.style.position = 'fixed';
+          p.style.top = '';
+          p.style.bottom = '';
+          p.style.width = '';
+          p.style.maxWidth = '';
+        });
+      } else {
+        document.querySelectorAll('.left-panel, .right-panel').forEach(p => {
+          p.classList.remove('show');
+          p.style.display = '';
+        });
+      }
+    }
+
+    window.addEventListener('resize', checkMobileLayout);
+    window.addEventListener('orientationchange', () => setTimeout(checkMobileLayout, 100));
+    checkMobileLayout();
 
     function renderEventsList(events) {
       const list = document.getElementById('eventsList');
