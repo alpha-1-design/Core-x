@@ -1,4 +1,4 @@
-const API_BASE = '';
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 let socket = null;
 let eventListeners = {};
 
@@ -49,16 +49,6 @@ const api = {
     }
   },
 
-  async getRegion(code) {
-    try {
-      const res = await fetcher(`${API_BASE}/api/regions/${code}`);
-      return await res.json();
-    } catch (e) {
-      console.error('Failed to fetch region:', e);
-      return null;
-    }
-  },
-
   async getStats() {
     try {
       const res = await fetcher(`${API_BASE}/api/stats`);
@@ -78,7 +68,6 @@ const api = {
       });
       return await res.json();
     } catch (e) {
-      console.error('Failed to summarize:', e);
       return null;
     }
   },
@@ -92,17 +81,6 @@ const api = {
       });
       return await res.json();
     } catch (e) {
-      console.error('Failed to analyze sentiment:', e);
-      return null;
-    }
-  },
-
-  async getPredictions(hours = 24) {
-    try {
-      const res = await fetcher(`${API_BASE}/api/predict?hours=${hours}`);
-      return await res.json();
-    } catch (e) {
-      console.error('Failed to fetch predictions:', e);
       return null;
     }
   },
@@ -112,7 +90,6 @@ const api = {
       const res = await fetcher(`${API_BASE}/api/weather/${lat}/${lng}`);
       return await res.json();
     } catch (e) {
-      console.error('Failed to fetch weather:', e);
       return null;
     }
   }
@@ -124,11 +101,9 @@ function initSocketIO() {
     return;
   }
   
-  socket = io(API_BASE || window.location.origin, {
+  socket = io(API_BASE, {
     transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: 10
+    reconnection: true
   });
   
   socket.on('connect', () => {
@@ -137,7 +112,6 @@ function initSocketIO() {
   });
   
   socket.on('disconnect', () => {
-    console.log('WebSocket disconnected');
     document.getElementById('liveIndicator')?.classList.remove('active');
   });
   
@@ -146,48 +120,19 @@ function initSocketIO() {
       eventListeners['update'].forEach(cb => cb(data));
     }
   });
-  
-  socket.on('new_event', (event) => {
-    if (eventListeners['new_event']) {
-      eventListeners['new_event'].forEach(cb => cb(event));
-    }
-  });
 }
 
 const socketIO = {
   on(event, callback) {
-    if (!eventListeners[event]) {
-      eventListeners[event] = [];
-    }
+    if (!eventListeners[event]) eventListeners[event] = [];
     eventListeners[event].push(callback);
   },
-  
-  off(event, callback) {
-    if (eventListeners[event]) {
-      eventListeners[event] = eventListeners[event].filter(cb => cb !== callback);
-    }
-  },
-  
   emit(event, data) {
-    if (socket) {
-      socket.emit(event, data);
-    }
+    if (socket) socket.emit(event, data);
   }
 };
 
 window.api = api;
 window.socketIO = socketIO;
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
-    document.head.appendChild(script);
-    script.onload = initSocketIO;
-  });
-} else {
-  const script = document.createElement('script');
-  script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
-  document.head.appendChild(script);
-  script.onload = initSocketIO;
-}
+document.addEventListener('DOMContentLoaded', initSocketIO);

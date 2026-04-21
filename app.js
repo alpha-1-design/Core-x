@@ -257,7 +257,7 @@ function drawFallbackContinents(ctx) {
 }
 
 function createAtmosphere() {
-  const atmosphereGeometry = new THREE.SphereGeometry(1.02, 64, 64);
+  const atmosphereGeometry = new THREE.SphereGeometry(1.04, 64, 64);
   const atmosphereMaterial = new THREE.ShaderMaterial({
     vertexShader: `
       varying vec3 vNormal;
@@ -276,24 +276,10 @@ function createAtmosphere() {
       void main() {
         vec3 viewDir = normalize(-vPosition);
         vec3 normal = normalize(vNormal);
-        
-        float sunInfluence = max(0.0, dot(normal, sunDirection));
-        
-        float fresnel = pow(1.0 - max(0.0, dot(viewDir, normal)), 3.0);
-        
-        vec3 dayColor = vec3(0.4, 0.6, 1.0);
-        vec3 sunsetColor = vec3(1.0, 0.5, 0.2);
-        vec3 nightColor = vec3(0.1, 0.15, 0.3);
-        
-        float dayFactor = sunInfluence;
-        float sunsetFactor = max(0.0, 1.0 - abs(sunInfluence - 0.5) * 2.0);
-        
-        vec3 atmosphereColor = mix(nightColor, dayColor, dayFactor);
-        atmosphereColor = mix(atmosphereColor, sunsetColor, sunsetFactor * 0.5);
-        
-        float intensity = fresnel * 0.8 + (1.0 - fresnel) * 0.2;
-        
-        gl_FragColor = vec4(atmosphereColor, intensity * 0.6);
+        float sunInfluence = dot(normal, sunDirection);
+        float intensity = pow(0.6 - dot(normal, vec3(0, 0, 1.0)), 8.0);
+        vec3 atmosphereColor = mix(vec3(0.05, 0.05, 0.15), vec3(0.3, 0.6, 1.0), max(0.0, sunInfluence + 0.3));
+        gl_FragColor = vec4(atmosphereColor, intensity * 0.5);
       }
     `,
     blending: THREE.AdditiveBlending,
@@ -359,34 +345,69 @@ function addEventMarker(event) {
   markerGroup.position.copy(pos);
   markerGroup.userData = { eventId: event.id, event: event };
   
+  // Bloom effect on spawn
+  markerGroup.scale.set(0, 0, 0);
+  new TWEEN.Tween(markerGroup.scale)
+    .to({ x: 1, y: 1, z: 1 }, 800)
+    .easing(TWEEN.Easing.Elastic.Out)
+    .start();
+
   const coreGeo = new THREE.SphereGeometry(0.015, 16, 16);
   const coreMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
   const core = new THREE.Mesh(coreGeo, coreMat);
   markerGroup.add(core);
   
-  const glowGeo = new THREE.SphereGeometry(0.03, 16, 16);
-  const glowMat = new THREE.MeshBasicMaterial({
-    color: color,
-    transparent: true,
-    opacity: 0.2
-  });
-  const glow = new THREE.Mesh(glowGeo, glowMat);
-  markerGroup.add(glow);
-  
-  const ringGeo = new THREE.RingGeometry(0.025, 0.04, 32);
+  const ringGeo = new THREE.RingGeometry(0.02, 0.035, 32);
   const ringMat = new THREE.MeshBasicMaterial({
     color: color,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.6,
     side: THREE.DoubleSide
   });
   const ring = new THREE.Mesh(ringGeo, ringMat);
   ring.lookAt(new THREE.Vector3(0, 0, 0));
-  ring.userData.isRing = true;
   markerGroup.add(ring);
   
+  // Continuous pulse
+  new TWEEN.Tween(ring.scale)
+    .to({ x: 2.2, y: 2.2, z: 2.2 }, 1500)
+    .repeat(Infinity)
+    .yoyo(true)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .start();
+
   globe.add(markerGroup);
   eventMarkers[event.id] = markerGroup;
+
+  // Visual ripple for critical events
+  if (event.severity === 'critical') {
+    showImpactRipple(event.lat, event.lng, color);
+  }
+}
+
+function showImpactRipple(lat, lng, color) {
+  const rippleGeo = new THREE.RingGeometry(0.01, 0.02, 64);
+  const rippleMat = new THREE.MeshBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.DoubleSide
+  });
+  const ripple = new THREE.Mesh(rippleGeo, rippleMat);
+  ripple.position.copy(latLngToVector3(lat, lng, 1.005));
+  ripple.lookAt(new THREE.Vector3(0, 0, 0));
+  globe.add(ripple);
+
+  new TWEEN.Tween(ripple.scale)
+    .to({ x: 15, y: 15, z: 15 }, 3000)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+
+  new TWEEN.Tween(ripple.material)
+    .to({ opacity: 0 }, 3000)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onComplete(() => globe.remove(ripple))
+    .start();
 }
 
 function addHotspotMarker(region) {
@@ -897,6 +918,13 @@ function updateSunPosition() {
 }
 
 function createFlightPath(startLat, startLng, endLat, endLng, predictions = []) {
+  // Cleanup old paths to prevent clutter
+  if (flightPaths.length > 5) {
+    const old = flightPaths.shift();
+    scene.remove(old.path);
+    scene.remove(old.sphere);
+  }
+
   const points = [];
   const steps = 50;
   
@@ -989,6 +1017,7 @@ function onWindowResize() {
 
 function animate() {
   animationId = requestAnimationFrame(animate);
+  TWEEN.update();
   
   if (isFlyingTo && flightTarget) {
     const elapsed = Date.now() - flightStartTime;

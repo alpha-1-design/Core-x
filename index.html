@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     :root {
       --bg-deep: #0a0e17;
@@ -1547,6 +1549,11 @@
       
       if (event.lat && event.lng) {
         loadWeather(event.lat, event.lng);
+        // Add a visual flight path to a random nearby region for effect
+        const nearby = regions.filter(r => r.code !== event.region).sort(() => 0.5 - Math.random())[0];
+        if (nearby) {
+           window.globeAPI.addFlightPath(event.lat, event.lng, nearby.lat, nearby.lng);
+        }
       } else {
         document.getElementById('weatherSection').style.display = 'none';
       }
@@ -1564,10 +1571,9 @@
       content.innerHTML = '<div id="weatherLoading">Loading weather data...</div>';
       
       try {
-        const res = await fetch(`/api/weather/${lat}/${lng}`);
-        const data = await res.json();
+        const data = await api.getWeather(lat, lng);
         
-        if (data.temperature !== undefined) {
+        if (data && data.temperature !== undefined) {
           const code = data.weather_code || 0;
           const weather = getWeatherDescription(code);
           const icon = getWeatherIcon(code);
