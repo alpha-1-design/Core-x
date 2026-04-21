@@ -2,6 +2,24 @@ const API_BASE = '';
 let socket = null;
 let eventListeners = {};
 
+async function fetcher(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      mode: 'cors'
+    });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (e) {
+    clearTimeout(timeoutId);
+    throw e;
+  }
+}
+
 const api = {
   async getEvents(params = {}) {
     try {
@@ -13,7 +31,7 @@ const api = {
       if (params.radius) queryParams.push(`radius=${params.radius}`);
       if (queryParams.length) url += '?' + queryParams.join('&');
       
-      const res = await fetch(url);
+      const res = await fetcher(url);
       return await res.json();
     } catch (e) {
       console.error('Failed to fetch events:', e);
@@ -23,7 +41,7 @@ const api = {
 
   async getRegions() {
     try {
-      const res = await fetch(`${API_BASE}/api/regions`);
+      const res = await fetcher(`${API_BASE}/api/regions`);
       return await res.json();
     } catch (e) {
       console.error('Failed to fetch regions:', e);
@@ -33,7 +51,7 @@ const api = {
 
   async getRegion(code) {
     try {
-      const res = await fetch(`${API_BASE}/api/regions/${code}`);
+      const res = await fetcher(`${API_BASE}/api/regions/${code}`);
       return await res.json();
     } catch (e) {
       console.error('Failed to fetch region:', e);
@@ -43,7 +61,7 @@ const api = {
 
   async getStats() {
     try {
-      const res = await fetch(`${API_BASE}/api/stats`);
+      const res = await fetcher(`${API_BASE}/api/stats`);
       return await res.json();
     } catch (e) {
       console.error('Failed to fetch stats:', e);
@@ -53,7 +71,7 @@ const api = {
 
   async summarize(eventId) {
     try {
-      const res = await fetch(`${API_BASE}/api/summarize`, {
+      const res = await fetcher(`${API_BASE}/api/summarize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_id: eventId })
@@ -67,7 +85,7 @@ const api = {
 
   async analyzeSentiment(eventId) {
     try {
-      const res = await fetch(`${API_BASE}/api/sentiment`, {
+      const res = await fetcher(`${API_BASE}/api/sentiment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_id: eventId })
@@ -81,7 +99,7 @@ const api = {
 
   async getPredictions(hours = 24) {
     try {
-      const res = await fetch(`${API_BASE}/api/predict?hours=${hours}`);
+      const res = await fetcher(`${API_BASE}/api/predict?hours=${hours}`);
       return await res.json();
     } catch (e) {
       console.error('Failed to fetch predictions:', e);
@@ -91,7 +109,7 @@ const api = {
 
   async getWeather(lat, lng) {
     try {
-      const res = await fetch(`${API_BASE}/api/weather/${lat}/${lng}`);
+      const res = await fetcher(`${API_BASE}/api/weather/${lat}/${lng}`);
       return await res.json();
     } catch (e) {
       console.error('Failed to fetch weather:', e);

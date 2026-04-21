@@ -35,9 +35,9 @@ let lastMousePos = { x: 0, y: 0 };
 
 const EARTH_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg';
 const NIGHT_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-night.jpg';
-const CLOUD_TEXTURE_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-clouds.png';
-const TERRAIN_NORMAL_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png';
-const BATHYMETRY_URL = 'https://unpkg.com/three-globe@2.31.0/example/img/earth-bathymetry.jpg';
+const CLOUD_TEXTURE_URL = 'https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/earth-clouds.png';
+const TERRAIN_NORMAL_URL = 'https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/earth-topology.png';
+const BATHYMETRY_URL = 'https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/earth-bathymetry.jpg';
 
 const THREE = window.THREE;
 
@@ -154,9 +154,8 @@ function createGlobe() {
       normalScale: new THREE.Vector2(0.8, 0.8),
       bumpMap: bathymetryTexture || null,
       bumpScale: 0.03,
-      specular: new THREE.Color(0x333333),
-      shininess: 10,
-      specularColor: new THREE.Color(0x555555)
+      specular: 0x333333,
+      shininess: 10
     });
     
     globe.material = material;
