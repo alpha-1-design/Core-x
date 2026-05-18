@@ -1,49 +1,36 @@
-# Contributing to Global Watch
+# Contributing to Core-x
 
-Thanks for your interest in contributing!
+First off, thank you for considering contributing to Core-x! It's people like you who help build better situational awareness for the world.
 
-## Getting Started
+## How Can I Contribute?
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/Core-x.git`
-3. Create a feature branch: `git checkout -b feature/your-feature-name`
+### Reporting Bugs
+*   Check the [Issues](https://github.com/alpha-1-design/Core-x/issues) to see if it's already reported.
+*   Provide a clear description of the bug and steps to reproduce.
+*   Include screenshots or logs from the browser console or Python server.
 
-## Development Setup
+### Feature Requests
+*   We are particularly interested in new **data sources** (e.g., weather, maritime traffic, social trends).
+*   Open an issue with the "enhancement" label to discuss your idea.
 
-```bash
-pip install -r requirements.txt
-python server.py
-```
+### Pull Requests
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Ensure your code follows PEP 8 for Python and standard JS conventions.
+4.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+5.  Push to the branch (`git push origin feature/AmazingFeature`).
+6.  Open a Pull Request.
 
-Visit http://localhost:5000
+## Engineering Standards
 
-## Running Tests
+*   **Asynchronous Excellence:** Avoid blocking the main event loop in both Python and JS.
+*   **Performance:** Three.js rendering should remain smooth (60 FPS) even with 1000+ markers.
+*   **Data Integrity:** Always validate and sanitize external API data before broadcasting.
 
-```bash
-python -m pytest tests/
-```
+## Style Guide
 
-## Code Style
+*   **Python:** Use type hints and docstrings.
+*   **JavaScript:** Prefer ES6+ features.
+*   **CSS:** Use modular CSS or well-commented vanilla CSS.
 
-- Follow PEP 8 for Python
-- Use meaningful variable names
-- Add docstrings for new functions
-- Log appropriately (not print)
-
-## Submitting Changes
-
-1. Make your changes
-2. Test locally
-3. Commit with a clear message: `git commit -m "Add feature X"`
-4. Push: `git push origin feature/your-feature-name`
-5. Open a Pull Request
-
-## Pull Request Guidelines
-
-- Describe what you changed and why
-- Link any related issues
-- Include test coverage for new features
-
-## Questions
-
-Open an issue for questions about contributing.
+Happy contributing!
